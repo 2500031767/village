@@ -1,13 +1,58 @@
 import { AlertTriangle, ArrowUp, BarChart3, MessageSquare } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useEffect } from 'react';
 import villageData from '../data/villageData';
+import { issuesAPI } from '../data/api';
 
 const tooltipStyle = { contentStyle: { background: '#1A2332', border: '1px solid rgba(148,163,184,0.1)', borderRadius: '8px', color: '#F1F5F9' } };
 
 const priorityColors = ['#EF4444', '#F59E0B', '#3B82F6', '#6366F1', '#14B8A6', '#22C55E', '#8B5CF6', '#EC4899'];
 
 export default function Issues() {
-  const p = villageData.problems;
+  const [issuesList, setIssuesList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchIssues = async () => {
+      try {
+        const data = await issuesAPI.getAll();
+        setIssuesList(data);
+      } catch (err) {
+        console.warn('Failed to load issues from API, falling back to static:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchIssues();
+  }, []);
+
+  // Compute dynamic metrics
+  let p = villageData.problems;
+  if (issuesList && issuesList.length > 0) {
+    const categoryCounts = {};
+    issuesList.forEach(issue => {
+      const cat = issue.category || 'Other';
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + (issue.reported_count || 1);
+    });
+
+    const sortedIssues = [...issuesList].sort((a, b) => (a.priority || 99) - (b.priority || 99));
+    const priorityRanking = sortedIssues.map(issue => issue.category || 'Other').slice(0, 8);
+    // remove duplicates from categories list
+    const uniquePriority = [...new Set(priorityRanking)];
+
+    const topProblems = sortedIssues.map(issue => ({
+      issue: issue.title,
+      count: issue.reported_count || 1
+    }));
+
+    p = {
+      priorityRanking: uniquePriority.length > 0 ? uniquePriority : ['No Active Priorities'],
+      categoryCounts,
+      topProblems,
+      householdFlags: villageData.problems.householdFlags
+    };
+  }
+
   const catData = Object.entries(p.categoryCounts).map(([name, value]) => ({ name, value }));
 
   return (
@@ -57,10 +102,10 @@ export default function Issues() {
               <div className="progress-bar-wrapper" key={issue}>
                 <div className="progress-bar-header">
                   <span className="progress-bar-label" style={{ textTransform: 'capitalize' }}>{issue} Issues</span>
-                  <span className="progress-bar-value">{count} HHs ({Math.round(count/villageData.overview.totalHouseholds*100)}%)</span>
+                  <span className="progress-bar-value">{count} HHs ({Math.round(count / villageData.overview.totalHouseholds * 100)}%)</span>
                 </div>
                 <div className="progress-bar-track">
-                  <div className="progress-bar-fill red" style={{ width: `${(count/villageData.overview.totalHouseholds*100)}%` }} />
+                  <div className="progress-bar-fill red" style={{ width: `${(count / villageData.overview.totalHouseholds * 100)}%` }} />
                 </div>
               </div>
             ))}

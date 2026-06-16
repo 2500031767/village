@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import fs from 'fs';
@@ -11,9 +11,9 @@ const dbPath = path.join(__dirname, '..', '..', 'database', 'village.db');
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
-const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const db = new DatabaseSync(dbPath);
+db.exec('PRAGMA journal_mode = WAL');
+db.exec('PRAGMA foreign_keys = ON');
 
 // Import and run schema
 import { initializeDatabase } from '../config/db.js';
@@ -102,94 +102,101 @@ const insertMember = db.prepare(`
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
-const seedHouseholds = db.transaction(() => {
-  for (let i = 0; i < 150; i++) {
-    const surname = pick(surnames);
-    const headName = `${pick(memberNames.male)} ${surname}`;
-    const headAge = randInt(28, 65);
-    const headGender = 'Male';
-    const headEduc = pick(educations);
-    const headOcc = pick(occupations.filter(o => o !== 'Housewife' && o !== 'Student'));
-    const spouseName = `${pick(memberNames.female)} ${surname}`;
-    const spouseEduc = pick(educations);
-    const spouseOcc = Math.random() > 0.6 ? 'Housewife' : pick(['Farmer', 'Labourer', 'Self Employed']);
-    const numMembers = randInt(3, 8);
-    const category = pick(categories);
-    const religion = pick(religions);
-    const ration = pick(rationCards);
-    const income = randInt(30000, 500000);
-    const houseType = pick(houseTypes);
-    const electricity = Math.random() > 0.02 ? 1 : 0;
-    const toilet = Math.random() > 0.1 ? 1 : 0;
-    const drainage = Math.random() > 0.6 ? 1 : 0;
-    const internet = Math.random() > 0.65 ? 1 : 0;
-    const solar = Math.random() > 0.85 ? 1 : 0;
-    const fuel = pick(fuels);
-    const water = pick(waterSources);
-    const landAcres = Math.random() > 0.3 ? parseFloat((Math.random() * 8).toFixed(1)) : 0;
-    const irrigation = landAcres > 0 ? pick(irrigations) : null;
-    const numCrops = landAcres > 0 ? randInt(1, 3) : 0;
-    const crops = numCrops > 0 ? JSON.stringify([...new Set(Array.from({length: numCrops}, () => pick(cropsList)))]) : null;
-    const numLivestock = Math.random() > 0.4 ? randInt(1, 3) : 0;
-    const livestock = numLivestock > 0 ? JSON.stringify([...new Set(Array.from({length: numLivestock}, () => pick(livestockList)))]) : null;
-    const remarks = pick(remarksList);
+const seedHouseholds = () => {
+  db.exec('BEGIN');
+  try {
+    for (let i = 0; i < 150; i++) {
+      const surname = pick(surnames);
+      const headName = `${pick(memberNames.male)} ${surname}`;
+      const headAge = randInt(28, 65);
+      const headGender = 'Male';
+      const headEduc = pick(educations);
+      const headOcc = pick(occupations.filter(o => o !== 'Housewife' && o !== 'Student'));
+      const spouseName = `${pick(memberNames.female)} ${surname}`;
+      const spouseEduc = pick(educations);
+      const spouseOcc = Math.random() > 0.6 ? 'Housewife' : pick(['Farmer', 'Labourer', 'Self Employed']);
+      const numMembers = randInt(3, 8);
+      const category = pick(categories);
+      const religion = pick(religions);
+      const ration = pick(rationCards);
+      const income = randInt(30000, 500000);
+      const houseType = pick(houseTypes);
+      const electricity = Math.random() > 0.02 ? 1 : 0;
+      const toilet = Math.random() > 0.1 ? 1 : 0;
+      const drainage = Math.random() > 0.6 ? 1 : 0;
+      const internet = Math.random() > 0.65 ? 1 : 0;
+      const solar = Math.random() > 0.85 ? 1 : 0;
+      const fuel = pick(fuels);
+      const water = pick(waterSources);
+      const landAcres = Math.random() > 0.3 ? parseFloat((Math.random() * 8).toFixed(1)) : 0;
+      const irrigation = landAcres > 0 ? pick(irrigations) : null;
+      const numCrops = landAcres > 0 ? randInt(1, 3) : 0;
+      const crops = numCrops > 0 ? JSON.stringify([...new Set(Array.from({length: numCrops}, () => pick(cropsList)))]) : null;
+      const numLivestock = Math.random() > 0.4 ? randInt(1, 3) : 0;
+      const livestock = numLivestock > 0 ? JSON.stringify([...new Set(Array.from({length: numLivestock}, () => pick(livestockList)))]) : null;
+      const remarks = pick(remarksList);
 
-    const result = insertHousehold.run(
-      headName, headAge, headGender, headEduc, headOcc,
-      spouseName, spouseEduc, spouseOcc,
-      numMembers, category, religion, ration, income,
-      houseType, electricity, toilet, drainage, internet, solar,
-      fuel, water, landAcres, irrigation, crops, livestock, remarks
-    );
+      const result = insertHousehold.run(
+        headName, headAge, headGender, headEduc, headOcc,
+        spouseName, spouseEduc, spouseOcc,
+        numMembers, category, religion, ration, income,
+        houseType, electricity, toilet, drainage, internet, solar,
+        fuel, water, landAcres, irrigation, crops, livestock, remarks
+      );
 
-    const householdId = result.lastInsertRowid;
+      const householdId = result.lastInsertRowid;
 
-    // Insert head as member
-    insertMember.run(householdId, headName, 'Head', headAge, 'Male', headEduc, headOcc, Math.random() > 0.8 ? pick(['Diabetes', 'Hypertension', 'Arthritis', 'Back Pain']) : null, 0, null, 0, null);
+      // Insert head as member
+      insertMember.run(householdId, headName, 'Head', headAge, 'Male', headEduc, headOcc, Math.random() > 0.8 ? pick(['Diabetes', 'Hypertension', 'Arthritis', 'Back Pain']) : null, 0, null, 0, null);
 
-    // Insert spouse
-    insertMember.run(householdId, spouseName, 'Spouse', headAge - randInt(0, 5), 'Female', spouseEduc, spouseOcc, Math.random() > 0.85 ? pick(['Thyroid', 'Anemia', 'Joint Pain']) : null, 0, null, 0, null);
+      // Insert spouse
+      insertMember.run(householdId, spouseName, 'Spouse', headAge - randInt(0, 5), 'Female', spouseEduc, spouseOcc, Math.random() > 0.85 ? pick(['Thyroid', 'Anemia', 'Joint Pain']) : null, 0, null, 0, null);
 
-    // Insert other members (children, parents, etc.)
-    const remaining = numMembers - 2;
-    for (let j = 0; j < remaining; j++) {
-      const isChild = j < remaining - 1 || Math.random() > 0.3;
-      const isParent = !isChild;
+      // Insert other members (children, parents, etc.)
+      const remaining = numMembers - 2;
+      for (let j = 0; j < remaining; j++) {
+        const isChild = j < remaining - 1 || Math.random() > 0.3;
+        const isParent = !isChild;
 
-      if (isChild) {
-        const childAge = randInt(2, 22);
-        const childGender = Math.random() > 0.5 ? 'Male' : 'Female';
-        const childName = `${pick(memberNames[childGender.toLowerCase()])} ${surname}`;
-        const isStudent = childAge >= 5 && childAge <= 22 && Math.random() > 0.1;
-        const childEduc = childAge < 5 ? 'None' : childAge < 12 ? 'Primary' : childAge < 16 ? '10th Pass' : childAge < 18 ? '12th Pass' : pick(['12th Pass', 'Graduate', 'Student']);
-        const childOcc = isStudent ? 'Student' : childAge < 5 ? 'None' : pick(['Student', 'Labourer', 'Private Employee']);
-        const isMigrant = !isStudent && childAge > 18 && Math.random() > 0.7;
+        if (isChild) {
+          const childAge = randInt(2, 22);
+          const childGender = Math.random() > 0.5 ? 'Male' : 'Female';
+          const childName = `${pick(memberNames[childGender.toLowerCase()])} ${surname}`;
+          const isStudent = childAge >= 5 && childAge <= 22 && Math.random() > 0.1;
+          const childEduc = childAge < 5 ? 'None' : childAge < 12 ? 'Primary' : childAge < 16 ? '10th Pass' : childAge < 18 ? '12th Pass' : pick(['12th Pass', 'Graduate', 'Student']);
+          const childOcc = isStudent ? 'Student' : childAge < 5 ? 'None' : pick(['Student', 'Labourer', 'Private Employee']);
+          const isMigrant = !isStudent && childAge > 18 && Math.random() > 0.7;
 
-        insertMember.run(
-          householdId, childName, childAge < 18 ? 'Child' : 'Son/Daughter',
-          childAge, childGender, childEduc, childOcc,
-          null,
-          isStudent ? 1 : 0,
-          isStudent ? (childAge <= 10 ? 'Government Primary School' : childAge <= 16 ? 'ZP High School' : 'Nellore College') : null,
-          isMigrant ? 1 : 0,
-          isMigrant ? pick(['Hyderabad', 'Chennai', 'Bangalore', 'Nellore', 'Tirupati', 'Mumbai']) : null
-        );
-      } else {
-        // Parent/elder
-        const parentAge = headAge + randInt(20, 30);
-        const parentGender = Math.random() > 0.5 ? 'Male' : 'Female';
-        const parentName = `${pick(memberNames[parentGender.toLowerCase()])} ${surname}`;
-        insertMember.run(
-          householdId, parentName, parentGender === 'Male' ? 'Father' : 'Mother',
-          parentAge, parentGender, pick(['Illiterate', 'Primary', 'Illiterate']),
-          'Retired',
-          Math.random() > 0.5 ? pick(['Diabetes', 'Hypertension', 'Arthritis', 'Vision Problems', 'Heart Disease']) : null,
-          0, null, 0, null
-        );
+          insertMember.run(
+            householdId, childName, childAge < 18 ? 'Child' : 'Son/Daughter',
+            childAge, childGender, childEduc, childOcc,
+            null,
+            isStudent ? 1 : 0,
+            isStudent ? (childAge <= 10 ? 'Government Primary School' : childAge <= 16 ? 'ZP High School' : 'Nellore College') : null,
+            isMigrant ? 1 : 0,
+            isMigrant ? pick(['Hyderabad', 'Chennai', 'Bangalore', 'Nellore', 'Tirupati', 'Mumbai']) : null
+          );
+        } else {
+          // Parent/elder
+          const parentAge = headAge + randInt(20, 30);
+          const parentGender = Math.random() > 0.5 ? 'Male' : 'Female';
+          const parentName = `${pick(memberNames[parentGender.toLowerCase()])} ${surname}`;
+          insertMember.run(
+            householdId, parentName, parentGender === 'Male' ? 'Father' : 'Mother',
+            parentAge, parentGender, pick(['Illiterate', 'Primary', 'Illiterate']),
+            'Retired',
+            Math.random() > 0.5 ? pick(['Diabetes', 'Hypertension', 'Arthritis', 'Vision Problems', 'Heart Disease']) : null,
+            0, null, 0, null
+          );
+        }
       }
     }
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
   }
-});
+};
 
 seedHouseholds();
 console.log('✓ 150 Households with members seeded');

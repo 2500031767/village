@@ -1,5 +1,6 @@
 import { Image, Filter } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { galleryAPI } from '../data/api';
 
 const photos = [
   { title: 'Village Panorama', category: 'village', color: '#14B8A6', emoji: '🏘️' },
@@ -18,9 +19,58 @@ const photos = [
 
 const categories = ['All', 'village', 'school', 'temple', 'agriculture', 'infrastructure', 'festival'];
 
+const colorMap = {
+  village: '#14B8A6',
+  school: '#6366F1',
+  temple: '#F59E0B',
+  agriculture: '#22C55E',
+  infrastructure: '#8B5CF6',
+  festival: '#F97316',
+  other: '#06B6D4'
+};
+
+const emojiMap = {
+  village: '🏘️',
+  school: '🏫',
+  temple: '🛕',
+  agriculture: '🌾',
+  infrastructure: '🛤️',
+  festival: '🎊',
+  other: '🖼️'
+};
+
+function getPhotoDetails(p) {
+  if (p.color && p.emoji) {
+    return { color: p.color, emoji: p.emoji };
+  }
+  const hasEmoji = p.image_url && p.image_url.length <= 4 && !p.image_url.includes('/') && !p.image_url.includes('http');
+  return {
+    color: colorMap[p.category] || '#94A3B8',
+    emoji: hasEmoji ? p.image_url : (emojiMap[p.category] || '🖼️')
+  };
+}
+
 export default function Gallery() {
+  const [photosList, setPhotosList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
-  const filtered = filter === 'All' ? photos : photos.filter(p => p.category === filter);
+
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const data = await galleryAPI.getAll();
+        setPhotosList(data.length > 0 ? data : photos);
+      } catch (err) {
+        console.warn('Failed to load photos from API, falling back to static:', err);
+        setPhotosList(photos);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPhotos();
+  }, []);
+
+  const filtered = filter === 'All' ? photosList : photosList.filter(p => p.category === filter);
 
   return (
     <div className="page-container">
@@ -43,25 +93,28 @@ export default function Gallery() {
       </div>
 
       <div className="grid-3">
-        {filtered.map((photo, i) => (
-          <div key={i} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{
-              height: '200px',
-              background: `linear-gradient(135deg, ${photo.color}33, ${photo.color}11)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '4rem',
-              borderBottom: '1px solid var(--border)'
-            }}>
-              {photo.emoji}
+        {filtered.map((photo, i) => {
+          const { color, emoji } = getPhotoDetails(photo);
+          return (
+            <div key={i} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{
+                height: '200px',
+                background: `linear-gradient(135deg, ${color}33, ${color}11)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '4rem',
+                borderBottom: '1px solid var(--border)'
+              }}>
+                {emoji}
+              </div>
+              <div style={{ padding: 'var(--space-md)' }}>
+                <h4 style={{ fontSize: '0.95rem', marginBottom: '4px' }}>{photo.title}</h4>
+                <span className="badge primary" style={{ textTransform: 'capitalize' }}>{photo.category}</span>
+              </div>
             </div>
-            <div style={{ padding: 'var(--space-md)' }}>
-              <h4 style={{ fontSize: '0.95rem', marginBottom: '4px' }}>{photo.title}</h4>
-              <span className="badge primary" style={{ textTransform: 'capitalize' }}>{photo.category}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="card mt-lg" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>

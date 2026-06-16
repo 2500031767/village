@@ -1,9 +1,10 @@
-import { 
-  Store, Phone, MapPin, Search, 
-  ShoppingCart, Wrench, Pill, Droplet, 
-  Scissors, Sprout, ChefHat, Zap, Lightbulb 
+import {
+  Store, Phone, MapPin, Search, Loader,
+  ShoppingCart, Wrench, Pill, Droplet,
+  Scissors, Sprout, ChefHat, Zap, Lightbulb
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { businessesAPI } from '../data/api';
 
 const businesses = [
   { name: 'Sri Lakshmi Kirana Store', owner: 'Narayana Reddy', phone: '9876543210', location: 'Main Road', type: 'Grocery Store', icon: ShoppingCart },
@@ -18,14 +19,51 @@ const businesses = [
   { name: 'Hari Electricals', owner: 'Hari Prasad', phone: '9876543219', location: 'Main Road', type: 'Electrician', icon: Lightbulb },
 ];
 
+const iconMap = {
+  'Grocery Store': ShoppingCart,
+  'Mechanic': Wrench,
+  'Medical Store': Pill,
+  'Dairy Center': Droplet,
+  'Dairy': Droplet,
+  'Tailor': Scissors,
+  'Agriculture Supply': Sprout,
+  'Salon': Scissors,
+  'Food Stall': ChefHat,
+  'Welder': Zap,
+  'Electrician': Lightbulb
+};
+
+function getIcon(type) {
+  return iconMap[type] || Store;
+}
+
 export default function BusinessDirectory() {
+  const [businessesList, setBusinessesList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
 
-  const types = ['All', ...new Set(businesses.map(b => b.type))];
-  const filtered = businesses.filter(b => {
-    const matchSearch = b.name.toLowerCase().includes(search.toLowerCase()) || b.type.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === 'All' || b.type === filter;
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        const data = await businessesAPI.getAll();
+        setBusinessesList(data.length > 0 ? data : businesses);
+      } catch (err) {
+        console.warn('Failed to load businesses from API, falling back to static:', err);
+        setBusinessesList(businesses);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBusinesses();
+  }, []);
+
+  const types = ['All', ...new Set(businessesList.map(b => b.type || b.business_type))];
+  const filtered = businessesList.filter(b => {
+    const name = b.name || '';
+    const type = b.type || b.business_type || '';
+    const matchSearch = name.toLowerCase().includes(search.toLowerCase()) || type.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === 'All' || type === filter;
     return matchSearch && matchFilter;
   });
 
@@ -64,7 +102,9 @@ export default function BusinessDirectory() {
 
       <div className="grid-3">
         {filtered.map((b, i) => {
-          const Icon = b.icon;
+          const Icon = b.icon || getIcon(b.business_type);
+          const owner = b.owner || b.owner_name || 'N/A';
+          const type = b.type || b.business_type || 'N/A';
           return (
             <div className="card" key={i} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
               <div className="flex" style={{ gap: 'var(--space-md)', alignItems: 'center' }}>
@@ -73,22 +113,23 @@ export default function BusinessDirectory() {
                 </div>
                 <div>
                   <h4 style={{ fontSize: '0.95rem', lineHeight: 1.3 }}>{b.name}</h4>
-                  <span className="badge primary" style={{ marginTop: '4px' }}>{b.type}</span>
+                  <span className="badge primary" style={{ marginTop: '4px' }}>{type}</span>
                 </div>
               </div>
               <div className="flex-col gap-sm">
-              <div className="flex gap-sm" style={{ alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                <Store size={14} /> <span>{b.owner}</span>
-              </div>
-              <div className="flex gap-sm" style={{ alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                <Phone size={14} /> <a href={`tel:${b.phone}`} style={{ color: 'var(--primary-light)' }}>{b.phone}</a>
-              </div>
-              <div className="flex gap-sm" style={{ alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                <MapPin size={14} /> <span>{b.location}</span>
+                <div className="flex gap-sm" style={{ alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <Store size={14} /> <span>{owner}</span>
+                </div>
+                <div className="flex gap-sm" style={{ alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <Phone size={14} /> {b.phone ? <a href={`tel:${b.phone}`} style={{ color: 'var(--primary-light)' }}>{b.phone}</a> : <span>N/A</span>}
+                </div>
+                <div className="flex gap-sm" style={{ alignItems: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <MapPin size={14} /> <span>{b.location || 'N/A'}</span>
+                </div>
               </div>
             </div>
-          </div>
-        )})}
+          );
+        })}
       </div>
     </div>
   );

@@ -1,4 +1,6 @@
 import { Bell, Calendar, Megaphone, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { notificationsAPI } from '../data/api';
 
 const notifications = [
   { title: 'Water Supply Notice', message: 'Due to pipeline repair work, water supply may be disrupted. Please store water accordingly.', type: 'notice', date: '2025-06-20', icon: '💧' },
@@ -11,9 +13,46 @@ const notifications = [
   { title: 'Power Shutdown Notice', message: 'Scheduled power shutdown for maintenance from 9 AM to 5 PM.', type: 'notice', date: '2025-07-05', icon: '⚡' },
 ];
 
+const defaultIcons = {
+  notice: '📢',
+  event: '📅'
+};
+
+function getNoticeIcon(n) {
+  if (n.icon) return n.icon;
+  const title = (n.title || '').toLowerCase();
+  if (title.includes('water')) return '💧';
+  if (title.includes('meeting') || title.includes('sabha')) return '🏛️';
+  if (title.includes('health')) return '🏥';
+  if (title.includes('vaccination') || title.includes('polio')) return '💉';
+  if (title.includes('kisan') || title.includes('farmer')) return '🌾';
+  if (title.includes('independence')) return '🇮🇳';
+  if (title.includes('festival') || title.includes('pooja')) return '🎉';
+  if (title.includes('power') || title.includes('electricity') || title.includes('shutdown')) return '⚡';
+  return defaultIcons[n.type] || '🔔';
+}
+
 export default function Notifications() {
-  const notices = notifications.filter(n => n.type === 'notice');
-  const events = notifications.filter(n => n.type === 'event');
+  const [notificationsList, setNotificationsList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const data = await notificationsAPI.getAll();
+        setNotificationsList(data.length > 0 ? data : notifications);
+      } catch (err) {
+        console.warn('Failed to load notifications from API, falling back to static:', err);
+        setNotificationsList(notifications);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, []);
+
+  const notices = notificationsList.filter(n => n.type === 'notice');
+  const events = notificationsList.filter(n => n.type === 'event');
 
   return (
     <div className="page-container">
@@ -27,17 +66,21 @@ export default function Notifications() {
         <div className="section">
           <h2 className="section-title"><Megaphone size={22} className="icon" />Notices</h2>
           <div className="flex-col gap-md">
-            {notices.map((n, i) => (
-              <div className="card" key={i} style={{ borderLeft: '4px solid var(--warning)' }}>
-                <div className="flex-between" style={{ marginBottom: 'var(--space-sm)' }}>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>{n.icon}</span> {n.title}
-                  </h4>
-                  <span className="badge warning">{n.date}</span>
+            {notices.map((n, i) => {
+              const icon = getNoticeIcon(n);
+              const date = n.event_date || n.date || 'N/A';
+              return (
+                <div className="card" key={i} style={{ borderLeft: '4px solid var(--warning)' }}>
+                  <div className="flex-between" style={{ marginBottom: 'var(--space-sm)' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{icon}</span> {n.title}
+                    </h4>
+                    <span className="badge warning">{date}</span>
+                  </div>
+                  <p className="text-sm text-secondary" style={{ lineHeight: 1.6 }}>{n.message}</p>
                 </div>
-                <p className="text-sm text-secondary" style={{ lineHeight: 1.6 }}>{n.message}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -45,17 +88,21 @@ export default function Notifications() {
         <div className="section">
           <h2 className="section-title"><Calendar size={22} className="icon" />Upcoming Events</h2>
           <div className="flex-col gap-md">
-            {events.map((e, i) => (
-              <div className="card" key={i} style={{ borderLeft: '4px solid var(--primary)' }}>
-                <div className="flex-between" style={{ marginBottom: 'var(--space-sm)' }}>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>{e.icon}</span> {e.title}
-                  </h4>
-                  <span className="badge primary">{e.date}</span>
+            {events.map((e, i) => {
+              const icon = getNoticeIcon(e);
+              const date = e.event_date || e.date || 'N/A';
+              return (
+                <div className="card" key={i} style={{ borderLeft: '4px solid var(--primary)' }}>
+                  <div className="flex-between" style={{ marginBottom: 'var(--space-sm)' }}>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{icon}</span> {e.title}
+                    </h4>
+                    <span className="badge primary">{date}</span>
+                  </div>
+                  <p className="text-sm text-secondary" style={{ lineHeight: 1.6 }}>{e.message}</p>
                 </div>
-                <p className="text-sm text-secondary" style={{ lineHeight: 1.6 }}>{e.message}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

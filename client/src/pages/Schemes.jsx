@@ -1,5 +1,7 @@
 import { Shield, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import villageData from '../data/villageData';
+import { schemesAPI } from '../data/api';
 
 const schemeLinks = {
   'PM-KISAN': 'https://pmkisan.gov.in',
@@ -13,14 +15,56 @@ const schemeLinks = {
   'Widow Pension': 'https://nsap.nic.in',
 };
 
-const categoryColors = {
-  'PM-KISAN': 'teal', 'Pension Scheme': 'amber', 'MNREGA': 'green',
-  'Ration Card': 'blue', 'Rythu Bharosa': 'teal', 'Amma Vodi': 'indigo',
-  'PM Awas Yojana': 'amber', 'Thalli ki Vandanam': 'red', 'Widow Pension': 'red'
-};
-
 export default function Schemes() {
+  const [schemesList, setSchemesList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const gs = villageData.governmentSchemes;
+
+  useEffect(() => {
+    const loadSchemes = async () => {
+      try {
+        const data = await schemesAPI.getAll();
+        if (data && data.length > 0) {
+          setSchemesList(data);
+        } else {
+          // Fallback mapping static mock data
+          const mapped = Object.entries(gs.beneficiaries).map(([name, count], index) => ({
+            id: index,
+            name,
+            category: name === 'PM-KISAN' || name === 'Rythu Bharosa' ? 'Agriculture' : name.includes('Pension') ? 'Pension' : 'Other',
+            beneficiary_count: count,
+            total_eligible: name === 'PM-KISAN' ? gs.coverageGaps.totalFarmerHouseholds : name === 'Pension Scheme' ? gs.coverageGaps.totalSeniors : villageData.overview.totalHouseholds,
+            portal_url: schemeLinks[name] || ''
+          }));
+          setSchemesList(mapped);
+        }
+      } catch (err) {
+        console.warn('API error, falling back to static:', err);
+        const mapped = Object.entries(gs.beneficiaries).map(([name, count], index) => ({
+          id: index,
+          name,
+          category: name === 'PM-KISAN' || name === 'Rythu Bharosa' ? 'Agriculture' : name.includes('Pension') ? 'Pension' : 'Other',
+          beneficiary_count: count,
+          total_eligible: name === 'PM-KISAN' ? gs.coverageGaps.totalFarmerHouseholds : name === 'Pension Scheme' ? gs.coverageGaps.totalSeniors : villageData.overview.totalHouseholds,
+          portal_url: schemeLinks[name] || ''
+        }));
+        setSchemesList(mapped);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSchemes();
+  }, []);
+
+  const totalMentions = schemesList.reduce((sum, s) => sum + (s.beneficiary_count || 0), 0);
+
+  const pmKisan = schemesList.find(s => s.name.toLowerCase().includes('kisan')) || {};
+  const farmersWithoutPMKisan = pmKisan.total_eligible ? (pmKisan.total_eligible - pmKisan.beneficiary_count) : gs.coverageGaps.farmersWithoutPMKisan;
+  const totalFarmerHouseholds = pmKisan.total_eligible || gs.coverageGaps.totalFarmerHouseholds;
+
+  const pension = schemesList.find(s => s.name.toLowerCase().includes('old age') || (s.name.toLowerCase().includes('pension') && !s.name.toLowerCase().includes('widow'))) || {};
+  const seniorsWithoutPension = pension.total_eligible ? (pension.total_eligible - pension.beneficiary_count) : gs.coverageGaps.seniorsWithoutPension;
+  const totalSeniors = pension.total_eligible || gs.coverageGaps.totalSeniors;
 
   return (
     <div className="page-container">
@@ -34,7 +78,7 @@ export default function Schemes() {
           <div className="stat-icon teal"><Shield size={24} /></div>
           <div className="stat-content">
             <div className="stat-label">Total Scheme Mentions</div>
-            <div className="stat-value">{gs.totalMentions}</div>
+            <div className="stat-value">{totalMentions}</div>
             <div className="stat-desc">Across all households</div>
           </div>
         </div>
@@ -42,16 +86,16 @@ export default function Schemes() {
           <div className="stat-icon amber"><AlertCircle size={24} /></div>
           <div className="stat-content">
             <div className="stat-label">Farmers w/o PM-KISAN</div>
-            <div className="stat-value">{gs.coverageGaps.farmersWithoutPMKisan}</div>
-            <div className="stat-desc">of {gs.coverageGaps.totalFarmerHouseholds} farmer households</div>
+            <div className="stat-value">{farmersWithoutPMKisan}</div>
+            <div className="stat-desc">of {totalFarmerHouseholds} farmer households</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon red"><AlertCircle size={24} /></div>
           <div className="stat-content">
             <div className="stat-label">Seniors w/o Pension</div>
-            <div className="stat-value">{gs.coverageGaps.seniorsWithoutPension}</div>
-            <div className="stat-desc">of {gs.coverageGaps.totalSeniors} senior citizens</div>
+            <div className="stat-value">{seniorsWithoutPension}</div>
+            <div className="stat-desc">of {totalSeniors} senior citizens</div>
           </div>
         </div>
       </div>
@@ -59,25 +103,28 @@ export default function Schemes() {
       <div className="section">
         <h2 className="section-title"><CheckCircle2 size={22} className="icon" />Scheme Beneficiaries</h2>
         <div className="grid-3">
-          {Object.entries(gs.beneficiaries).map(([scheme, count]) => {
-            const pct = Math.round((count / villageData.overview.totalHouseholds) * 100);
+          {schemesList.map(scheme => {
+            const count = scheme.beneficiary_count || 0;
+            const eligible = scheme.total_eligible || 100;
+            const pct = Math.round((count / eligible) * 100);
+            const link = scheme.portal_url || schemeLinks[scheme.name];
             return (
-              <div className="card" key={scheme} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <div className="card" key={scheme.id} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
                 <div className="flex-between">
-                  <h4 style={{ fontSize: '0.95rem' }}>{scheme}</h4>
+                  <h4 style={{ fontSize: '0.95rem' }}>{scheme.name}</h4>
                   <span className="badge primary">{count} HHs</span>
                 </div>
                 <div className="progress-bar-wrapper" style={{ marginBottom: 0 }}>
                   <div className="progress-bar-header">
-                    <span className="progress-bar-label">Coverage</span>
+                    <span className="progress-bar-label">Coverage ({count}/{eligible})</span>
                     <span className="progress-bar-value">{pct}%</span>
                   </div>
                   <div className="progress-bar-track">
-                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                    <div className="progress-bar-fill" style={{ width: `${Math.min(pct, 100)}%` }} />
                   </div>
                 </div>
-                {schemeLinks[scheme] && (
-                  <a href={schemeLinks[scheme]} target="_blank" rel="noopener noreferrer"
+                {link && (
+                  <a href={link} target="_blank" rel="noopener noreferrer"
                     className="btn btn-outline" style={{ fontSize: '0.8rem', padding: '6px 12px', alignSelf: 'flex-start' }}>
                     Apply Online <ExternalLink size={14} />
                   </a>
@@ -95,15 +142,15 @@ export default function Schemes() {
           <div className="grid-2">
             <div>
               <p className="text-sm text-secondary" style={{ lineHeight: 1.8 }}>
-                <strong style={{ color: 'var(--text-primary)' }}>PM-KISAN Gap:</strong> {gs.coverageGaps.farmersWithoutPMKisan} farming
-                households out of {gs.coverageGaps.totalFarmerHouseholds} are NOT receiving PM-KISAN benefits.
+                <strong style={{ color: 'var(--text-primary)' }}>PM-KISAN Gap:</strong> {farmersWithoutPMKisan} farming
+                households out of {totalFarmerHouseholds} are NOT receiving PM-KISAN benefits.
                 These families are eligible but not enrolled.
               </p>
             </div>
             <div>
               <p className="text-sm text-secondary" style={{ lineHeight: 1.8 }}>
-                <strong style={{ color: 'var(--text-primary)' }}>Pension Gap:</strong> {gs.coverageGaps.seniorsWithoutPension} senior
-                citizens out of {gs.coverageGaps.totalSeniors} are without pension coverage.
+                <strong style={{ color: 'var(--text-primary)' }}>Pension Gap:</strong> {seniorsWithoutPension} senior
+                citizens out of {totalSeniors} are without pension coverage.
                 Immediate enrollment drive recommended.
               </p>
             </div>

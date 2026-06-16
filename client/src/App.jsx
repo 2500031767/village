@@ -17,6 +17,8 @@ import DigitalServices from './pages/DigitalServices';
 import AIInsights from './pages/AIInsights';
 import Survey from './pages/Survey';
 import Contact from './pages/Contact';
+import Login from './pages/Login';
+import AdminDashboard from './pages/AdminDashboard';
 import './index.css';
 
 import { useState } from 'react';
@@ -47,6 +49,8 @@ function App() {
             <Route path="/insights" element={<AIInsights />} />
             <Route path="/survey" element={<Survey />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </main>
       </div>

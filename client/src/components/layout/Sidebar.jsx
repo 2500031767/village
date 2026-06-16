@@ -4,8 +4,9 @@ import {
   Home, Info, BarChart3, Wheat, GraduationCap, Heart,
   Building2, Shield, AlertTriangle, Bell, Store, Image,
   Globe, Plane, Monitor, Phone, ChevronLeft, ChevronRight,
-  Menu, X, Sparkles, Users, ClipboardList
+  Menu, X, Sparkles, Users, ClipboardList, Lock
 } from 'lucide-react';
+import { authAPI } from '../../data/api';
 import './Sidebar.css';
 
 const navItems = [
@@ -30,10 +31,12 @@ const navItems = [
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAuth, setIsAuth] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
     setMobileOpen(false);
+    setIsAuth(authAPI.isAuthenticated());
   }, [location]);
 
   useEffect(() => {
@@ -73,7 +76,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           </button>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" style={{ paddingBottom: 'var(--space-md)' }}>
           {navItems.map(({ path, label, icon: Icon }) => (
             <NavLink
               key={path}
@@ -86,6 +89,19 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               {collapsed && <span className="sidebar-tooltip">{label}</span>}
             </NavLink>
           ))}
+          
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 'var(--space-sm) 0' }} />
+          
+          <NavLink
+            to={isAuth ? "/admin" : "/login"}
+            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            style={({ isActive }) => isActive ? {} : { color: 'var(--accent-light)' }}
+            title={collapsed ? (isAuth ? "Admin Workspace" : "Admin Login") : undefined}
+          >
+            <Lock size={20} />
+            {!collapsed && <span>{isAuth ? "Admin Workspace" : "Admin Login"}</span>}
+            {collapsed && <span className="sidebar-tooltip">{isAuth ? "Admin Workspace" : "Admin Login"}</span>}
+          </NavLink>
         </nav>
 
         <div className="sidebar-footer">

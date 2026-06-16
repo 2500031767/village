@@ -1,4 +1,6 @@
-import { Plane, Heart, Users, HandHeart, TrendingUp, Phone } from 'lucide-react';
+import { Plane, Heart, Users, HandHeart, TrendingUp, Phone, Loader } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { nriProjectsAPI, volunteerAPI } from '../data/api';
 
 const projects = [
   { title: 'School Renovation', desc: 'Renovation of Government Primary School including new classrooms, furniture, and computer lab.', target: 500000, collected: 210000 },
@@ -16,6 +18,19 @@ const volunteers = [
   { title: 'Agricultural Advisory', desc: 'Guide farmers on modern techniques and organic farming.', category: 'Agriculture', icon: '🌾' },
 ];
 
+const defaultVolIcons = {
+  Education: '🎓',
+  Health: '🏥',
+  Employment: '💼',
+  Agriculture: '🌾',
+  Other: '🤝'
+};
+
+function getVolIcon(v) {
+  if (v.icon) return v.icon;
+  return defaultVolIcons[v.category] || '🤝';
+}
+
 function formatCurrency(num) {
   if (num >= 100000) return `₹${(num / 100000).toFixed(1)}L`;
   if (num >= 1000) return `₹${(num / 1000).toFixed(0)}K`;
@@ -23,6 +38,29 @@ function formatCurrency(num) {
 }
 
 export default function NRI() {
+  const [projectsList, setProjectsList] = useState([]);
+  const [volunteersList, setVolunteersList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNRI = async () => {
+      try {
+        const [projectsData, volunteersData] = await Promise.all([
+          nriProjectsAPI.getAll(),
+          volunteerAPI.getAll()
+        ]);
+        setProjectsList(projectsData.length > 0 ? projectsData : projects);
+        setVolunteersList(volunteersData.length > 0 ? volunteersData : volunteers);
+      } catch (err) {
+        console.warn('Failed to load NRI data from API, falling back to static:', err);
+        setProjectsList(projects);
+        setVolunteersList(volunteers);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNRI();
+  }, []);
   return (
     <div className="page-container">
       <div className="page-header">
@@ -38,19 +76,22 @@ export default function NRI() {
           Contact the Village Office to record your contribution.
         </p>
         <div className="grid-2">
-          {projects.map((proj, i) => {
-            const pct = Math.round((proj.collected / proj.target) * 100);
+          {projectsList.map((proj, i) => {
+            const collected = proj.collected !== undefined ? proj.collected : (proj.collected_amount || 0);
+            const target = proj.target !== undefined ? proj.target : (proj.target_amount || 0);
+            const desc = proj.desc || proj.description || '';
+            const pct = Math.round((collected / (target || 1)) * 100);
             return (
               <div className="card" key={i}>
                 <h4 style={{ marginBottom: 'var(--space-sm)' }}>{proj.title}</h4>
-                <p className="text-sm text-secondary mb-md">{proj.desc}</p>
+                <p className="text-sm text-secondary mb-md">{desc}</p>
                 <div className="progress-bar-wrapper" style={{ marginBottom: 'var(--space-sm)' }}>
                   <div className="progress-bar-header">
-                    <span className="progress-bar-label">{formatCurrency(proj.collected)} / {formatCurrency(proj.target)}</span>
+                    <span className="progress-bar-label">{formatCurrency(collected)} / {formatCurrency(target)}</span>
                     <span className="progress-bar-value">{pct}%</span>
                   </div>
                   <div className="progress-bar-track" style={{ height: '12px' }}>
-                    <div className="progress-bar-fill green" style={{ width: `${pct}%`, height: '12px' }} />
+                    <div className="progress-bar-fill green" style={{ width: `${Math.min(pct, 100)}%`, height: '12px' }} />
                   </div>
                 </div>
               </div>
@@ -83,14 +124,23 @@ export default function NRI() {
       <div className="section">
         <h2 className="section-title"><HandHeart size={22} className="icon" />Volunteer Opportunities</h2>
         <div className="grid-3">
-          {volunteers.map((vol, i) => (
-            <div className="card" key={i}>
-              <span style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)', display: 'block' }}>{vol.icon}</span>
-              <h4 style={{ marginBottom: 'var(--space-sm)', fontSize: '0.95rem' }}>{vol.title}</h4>
-              <span className="badge primary mb-md">{vol.category}</span>
-              <p className="text-sm text-secondary" style={{ lineHeight: 1.6, marginTop: 'var(--space-sm)' }}>{vol.desc}</p>
-            </div>
-          ))}
+          {volunteersList.map((vol, i) => {
+            const icon = getVolIcon(vol);
+            const desc = vol.desc || vol.description || '';
+            return (
+              <div className="card" key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)', display: 'block' }}>{icon}</span>
+                <h4 style={{ marginBottom: '4px', fontSize: '0.95rem' }}>{vol.title}</h4>
+                <span className="badge primary" style={{ alignSelf: 'flex-start' }}>{vol.category}</span>
+                <p className="text-sm text-secondary" style={{ lineHeight: 1.6, marginTop: 'var(--space-sm)', flex: 1 }}>{desc}</p>
+                {vol.contact_info && (
+                  <p className="text-xs text-muted" style={{ borderTop: '1px solid var(--border-light)', paddingTop: '8px', marginTop: '8px' }}>
+                    {vol.contact_info}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
