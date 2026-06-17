@@ -2,12 +2,14 @@ import { useEffect, useState, useRef } from 'react';
 import {
   Users, Home as HomeIcon, MapPin, Wheat, GraduationCap,
   Zap, Flame, Heart, Building2, TrendingUp, BarChart3,
-  ArrowRight, Sparkles, Shield, AlertTriangle, TreePine
+  ArrowRight, Sparkles, Shield, AlertTriangle, TreePine, Image
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import villageData from '../data/villageData';
+import { galleryAPI } from '../data/api';
 import './Home.css';
 
 // Animated counter hook
@@ -102,13 +104,26 @@ const heroImages = [
 
 export default function Home() {
   const data = villageData;
+  const navigate = useNavigate();
   const [currentBg, setCurrentBg] = useState(0);
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentBg((prev) => (prev + 1) % heroImages.length);
     }, 5000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Fetch latest gallery photos for the preview strip
+  useEffect(() => {
+    galleryAPI.getAll()
+      .then(photos => {
+        // Only show photos with real uploaded images (not emojis)
+        const real = photos.filter(p => p.image_url && (p.image_url.startsWith('/') || p.image_url.startsWith('http')));
+        setGalleryPhotos(real.slice(0, 6));
+      })
+      .catch(() => {});
   }, []);
   const [popCount, popRef] = useCounter(data.overview.totalPopulation);
   const [hhCount, hhRef] = useCounter(data.overview.totalHouseholds);
@@ -356,6 +371,61 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* ═══ VILLAGE PHOTO GALLERY ═══ */}
+        {galleryPhotos.length > 0 && (
+          <div className="section">
+            <h2 className="section-title">
+              <Image size={22} className="icon" />
+              Village Gallery
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: '12px',
+              marginBottom: 'var(--space-md)'
+            }}>
+              {galleryPhotos.map((photo, i) => (
+                <div
+                  key={photo.id || i}
+                  className="card"
+                  style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}
+                  onClick={() => navigate('/gallery')}
+                >
+                  <div style={{ height: '150px', overflow: 'hidden', background: 'var(--bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img
+                      src={photo.image_url}
+                      alt={photo.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s' }}
+                      onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                      onError={e => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '2rem' }}>🖼️</div>
+                  </div>
+                  <div style={{ padding: '8px 12px' }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {photo.title || 'Untitled'}
+                    </p>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{photo.category}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <button
+                className="btn btn-outline"
+                onClick={() => navigate('/gallery')}
+                style={{ fontSize: '0.85rem' }}
+              >
+                View Full Gallery <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ═══ EXECUTIVE SUMMARY ═══ */}
         <div className="section">

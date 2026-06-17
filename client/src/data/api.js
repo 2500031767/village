@@ -1,23 +1,32 @@
 import axios from 'axios';
 
+// Base URL — empty so all regular requests go through Vite proxy
+const API_BASE = '';
+
+// Direct server URL — used only for file uploads to bypass Vite proxy
+// (Vite proxy aborts large multipart requests with ECONNABORTED)
+const SERVER_DIRECT = 'http://localhost:5000';
+
 const api = axios.create({
-  baseURL: '' // empty base URL so requests go through the Vite dev server proxy or relative path
+  baseURL: API_BASE
 });
 
-// Request interceptor to append JWT token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('admin_token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Separate instance for direct server calls (file uploads)
+const apiDirect = axios.create({
+  baseURL: SERVER_DIRECT
+});
 
+// Attach JWT to both instances
+const authInterceptor = (config) => {
+  const token = localStorage.getItem('admin_token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+};
+
+api.interceptors.request.use(authInterceptor, (error) => Promise.reject(error));
+apiDirect.interceptors.request.use(authInterceptor, (error) => Promise.reject(error));
 export const authAPI = {
   login: async (username, password) => {
     const res = await api.post('/api/auth/login', { username, password });
@@ -93,12 +102,19 @@ export const galleryAPI = {
     const res = await api.get('/api/gallery');
     return res.data;
   },
-  create: async (data) => {
-    const res = await api.post('/api/gallery', data);
+  create: async (formData) => {
+    // Use direct server connection — Vite proxy aborts multipart POST
+    const res = await apiDirect.post('/api/gallery', formData);
     return res.data;
   },
-  update: async (id, data) => {
-    const res = await api.put(`/api/gallery/${id}`, data);
+  update: async (id, payload) => {
+    if (payload instanceof FormData) {
+      // File upload — go direct to bypass Vite proxy
+      const res = await apiDirect.put(`/api/gallery/${id}`, payload);
+      return res.data;
+    }
+    // JSON update (no new file) — proxy is fine for this
+    const res = await api.put(`/api/gallery/${id}`, payload);
     return res.data;
   },
   delete: async (id) => {

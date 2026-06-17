@@ -9,6 +9,13 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
+        secure: false,
+        proxyTimeout: 60000,
+        timeout: 60000
+      },
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
         secure: false
       }
     }

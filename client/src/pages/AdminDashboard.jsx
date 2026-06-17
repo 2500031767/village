@@ -31,6 +31,8 @@ export default function AdminDashboard() {
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [editingId, setEditingId] = useState(null);
   const [formValues, setFormValues] = useState({});
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState(null);
 
@@ -158,6 +160,8 @@ export default function AdminDashboard() {
     }
 
     setFormValues(defaults);
+    setImageFile(null);
+    setImagePreview(null);
     setShowModal(true);
   };
 
@@ -166,6 +170,13 @@ export default function AdminDashboard() {
     setModalMode('edit');
     setEditingId(item.id);
     setFormValues({ ...item });
+    setImageFile(null);
+    // Show existing image as preview if it's a real URL
+    if (item.image_url && (item.image_url.startsWith('/') || item.image_url.startsWith('http'))) {
+      setImagePreview(item.image_url);
+    } else {
+      setImagePreview(null);
+    }
     setShowModal(true);
   };
 
@@ -176,6 +187,16 @@ export default function AdminDashboard() {
       ...prev,
       [name]: type === 'checkbox' ? (checked ? 1 : 0) : value
     }));
+  };
+
+  // Handle Image File Selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   // Submit Form (Save/Update)
@@ -211,18 +232,50 @@ export default function AdminDashboard() {
         }
       } else if (activeTab === 'gallery') {
         if (modalMode === 'add') {
-          const newItem = await galleryAPI.create(formValues);
+          // Add always requires a file upload — send as FormData
+          if (!imageFile) {
+            showFeedback('Please select an image to upload.', 'danger');
+            setActionLoading(false);
+            return;
+          }
+          const formData = new FormData();
+          formData.append('title', formValues.title || '');
+          formData.append('category', formValues.category || 'village');
+          formData.append('description', formValues.description || '');
+          formData.append('image', imageFile);
+          const newItem = await galleryAPI.create(formData);
           setData(prev => ({ ...prev, gallery: [newItem, ...prev.gallery] }));
           showFeedback('Gallery photo added successfully!');
         } else {
-          const updatedItem = await galleryAPI.update(editingId, formValues);
-          setData(prev => ({
-            ...prev,
-            gallery: prev.gallery.map(item => item.id === editingId ? updatedItem : item)
-          }));
+          // Edit — only use FormData if a new file was selected, otherwise use JSON
+          if (imageFile) {
+            const formData = new FormData();
+            formData.append('title', formValues.title || '');
+            formData.append('category', formValues.category || 'village');
+            formData.append('description', formValues.description || '');
+            formData.append('image', imageFile);
+            const updatedItem = await galleryAPI.update(editingId, formData);
+            setData(prev => ({
+              ...prev,
+              gallery: prev.gallery.map(item => item.id === editingId ? updatedItem : item)
+            }));
+          } else {
+            // No new file — send plain JSON, keep existing image_url on the server
+            const updatedItem = await galleryAPI.update(editingId, {
+              title: formValues.title || '',
+              category: formValues.category || 'village',
+              description: formValues.description || ''
+            });
+            setData(prev => ({
+              ...prev,
+              gallery: prev.gallery.map(item => item.id === editingId ? updatedItem : item)
+            }));
+          }
           showFeedback('Gallery photo updated successfully!');
         }
-      } else if (activeTab === 'schemes') {
+      }
+
+      else if (activeTab === 'schemes') {
         if (modalMode === 'add') {
           const newItem = await schemesAPI.create(formValues);
           setData(prev => ({ ...prev, schemes: [newItem, ...prev.schemes] }));
@@ -617,21 +670,26 @@ export default function AdminDashboard() {
                 <>
                   <td>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
+                      width: '48px',
+                      height: '48px',
                       borderRadius: '6px',
                       background: 'var(--bg-surface)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '1.25rem',
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      border: '1px solid var(--border)'
                     }}>
-                      {item.image_url ? (
-                        item.image_url.startsWith('http') || item.image_url.startsWith('/') ? (
-                          <div style={{ padding: '4px' }}>🖼️</div>
-                        ) : item.image_url
-                      ) : '🖼️'}
+                      {item.image_url && (item.image_url.startsWith('/') || item.image_url.startsWith('http')) ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span>{item.image_url || '🖼️'}</span>
+                      )}
                     </div>
                   </td>
                   <td className="font-bold">{item.title || 'Untitled'}</td>
@@ -847,16 +905,82 @@ export default function AdminDashboard() {
               </select>
             </div>
           </div>
+
+          {/* Image Upload */}
           <div className="flex-col gap-sm">
-            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Image Emoji or URL</label>
-            <input
-              name="image_url"
-              value={formValues.image_url || ''}
-              onChange={handleInputChange}
-              required
-              placeholder="e.g. 🌾 or /images/paddy.jpg"
-            />
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Upload Image</label>
+            <label style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '24px',
+              border: '2px dashed var(--border)',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              background: 'var(--bg-surface)',
+              transition: 'border-color var(--transition-fast)',
+              minHeight: '120px'
+            }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                  setImageFile(file);
+                  const reader = new FileReader();
+                  reader.onloadend = () => setImagePreview(reader.result);
+                  reader.readAsDataURL(file);
+                }
+              }}
+            >
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{
+                    maxHeight: '160px',
+                    maxWidth: '100%',
+                    borderRadius: 'var(--radius-sm)',
+                    objectFit: 'contain'
+                  }}
+                />
+              ) : (
+                <>
+                  <Image size={32} style={{ color: 'var(--text-muted)' }} />
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Click to browse or drag & drop an image here
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    JPEG, PNG, GIF, WebP — max 5 MB
+                  </span>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                style={{ display: 'none' }}
+              />
+            </label>
+            {imagePreview && (
+              <button
+                type="button"
+                onClick={() => { setImageFile(null); setImagePreview(null); }}
+                style={{
+                  alignSelf: 'flex-start',
+                  fontSize: '0.75rem',
+                  color: 'var(--danger)',
+                  background: 'none',
+                  padding: '2px 0'
+                }}
+              >
+                ✕ Remove image
+              </button>
+            )}
           </div>
+
           <div className="flex-col gap-sm">
             <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Short Description</label>
             <textarea

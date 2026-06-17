@@ -1,9 +1,67 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import db from './config/db.js';
 import { authenticateToken, generateToken } from './middleware/auth.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+// ─── FILE UPLOAD SETUP ───
+// Use memoryStorage to avoid any disk stream issues, write file manually
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      const err = new Error('Only image files are allowed');
+      err.status = 400;
+      cb(err, false);
+    }
+  }
+});
+
+function saveUploadedFile(file) {
+  const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+  const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+  const filepath = path.join(UPLOADS_DIR, filename);
+  fs.writeFileSync(filepath, file.buffer);
+  return `/uploads/${filename}`;
+}
+
+function multerUpload(req, res, next) {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      err.status = 400;
+      return next(err);
+    }
+    next();
+  });
+}
+
 const router = express.Router();
+
+// ─── IMAGE UPLOAD ENDPOINT ───
+router.post('/upload', authenticateToken, multerUpload, (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+    const imageUrl = saveUploadedFile(req.file);
+    res.json({ url: imageUrl });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ─── AUTHENTICATION ENDPOINTS ───
 
@@ -212,11 +270,17 @@ router.get('/gallery', (req, res, next) => {
 });
 
 // Create gallery item
-router.post('/gallery', authenticateToken, (req, res, next) => {
+router.post('/gallery', authenticateToken, multerUpload, (req, res, next) => {
   try {
-    const { title, category, image_url, description } = req.body;
+    const { title, category, description } = req.body;
+    let image_url = req.body.image_url || null;
+
+    if (req.file) {
+      image_url = saveUploadedFile(req.file);
+    }
+
     if (!image_url) {
-      return res.status(400).json({ error: 'Image URL is required' });
+      return res.status(400).json({ error: 'An image file is required' });
     }
     const stmt = db.prepare(
       'INSERT INTO gallery (title, category, image_url, description) VALUES (?, ?, ?, ?)'
@@ -229,26 +293,49 @@ router.post('/gallery', authenticateToken, (req, res, next) => {
   }
 });
 
-// Update gallery item
+// Update gallery item — accepts multipart/form-data (with new image) or JSON (text fields only)
 router.put('/gallery/:id', authenticateToken, (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+
+  if (contentType.includes('multipart/form-data')) {
+    // File upload path — use multer
+    multerUpload(req, res, (err) => {
+      if (err) {
+        err.status = 400;
+        return next(err);
+      }
+      handleGalleryUpdate(req, res, next);
+    });
+  } else {
+    // JSON / text-only update — no file involved
+    handleGalleryUpdate(req, res, next);
+  }
+});
+
+function handleGalleryUpdate(req, res, next) {
   try {
     const { id } = req.params;
-    const { title, category, image_url, description } = req.body;
-    
+    const { title, category, description, image_url } = req.body;
+
     const photo = db.prepare('SELECT * FROM gallery WHERE id = ?').get(id);
     if (!photo) {
       return res.status(404).json({ error: 'Gallery item not found' });
     }
 
+    // If a new file was uploaded, use its path; otherwise keep existing image_url
+    const newImageUrl = req.file
+      ? saveUploadedFile(req.file)
+      : (image_url !== undefined ? image_url : photo.image_url);
+
     const stmt = db.prepare(`
-      UPDATE gallery 
+      UPDATE gallery
       SET title = ?, category = ?, image_url = ?, description = ?
       WHERE id = ?
     `);
     stmt.run(
       title !== undefined ? title : photo.title,
       category !== undefined ? category : photo.category,
-      image_url !== undefined ? image_url : photo.image_url,
+      newImageUrl,
       description !== undefined ? description : photo.description,
       id
     );
@@ -258,7 +345,7 @@ router.put('/gallery/:id', authenticateToken, (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+}
 
 // Delete gallery item
 router.delete('/gallery/:id', authenticateToken, (req, res, next) => {
