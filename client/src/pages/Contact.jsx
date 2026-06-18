@@ -19,7 +19,7 @@ export default function Contact() {
               <div>
                 <p className="text-sm text-muted">Address</p>
                 <p style={{ fontWeight: 500 }}>Seetharampuram Thanda</p>
-                <p className="text-sm text-secondary">Mylukuru Mandal, Nellore District</p>
+                <p className="text-sm text-secondary">Mylavaram Mandal, NTR District</p>
                 <p className="text-sm text-secondary">Andhra Pradesh, India</p>
               </div>
             </div>
@@ -88,19 +88,60 @@ export default function Contact() {
         </div>
       </div>
 
-      {/* Map */}
+      {/* Map + Street View */}
       <div className="section mt-lg">
-        <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d30000!2d79.88!3d14.50!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTTCsDMwJzAwLjAiTiA3OcKwNTInNDguMCJF!5e0!3m2!1sen!2sin!4v1"
-            width="100%"
-            height="350"
-            style={{ border: 0, display: 'block' }}
-            allowFullScreen=""
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Village Location"
-          />
+        <h3 style={{ marginBottom: 'var(--space-md)', fontSize: '1.1rem', fontWeight: 700 }}>
+          <MapPin size={18} style={{ verticalAlign: 'middle', marginRight: '8px', color: 'var(--primary-light)' }} />
+          Village Location
+        </h3>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }} className="map-grid">
+
+          {/* Google Maps — pinned to the school/village landmark */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
+            <div style={{ padding: '10px 16px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              📍 Map View — Seetharampuram Thanda
+            </div>
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d980.8!2d80.6061103!3d16.8612158!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a35c51527592c65%3A0xa7f92195f423688b!2z4K6q4K6_4K6v4K6-4K6w4K6f4K6-4K6a4K-N4K6o4K6k4K-N4K6o4K6k!5e1!3m2!1sen!2sin!4v1"
+              width="100%"
+              height="340"
+              style={{ border: 0, display: 'block' }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Village Map View"
+            />
+          </div>
+
+          {/* Google Street View */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
+            <div style={{ padding: '10px 16px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              🚶 Street View — Village Ground Level
+            </div>
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!4v1!6m8!1m7!1s66ZddHmuiXW8FxrZZqms6Q!2m2!1d16.86085!2d80.6077994!3f205.12!4f0!5f0.7820865974627469"
+              width="100%"
+              height="340"
+              style={{ border: 0, display: 'block' }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Village Street View"
+            />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-md)', textAlign: 'center' }}>
+          <a
+            href="https://www.google.com/maps/place/?q=place_id:ChIJZSxZJxXFNTkRi2gjpJUh-ac"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline"
+            style={{ fontSize: '0.85rem' }}
+          >
+            <MapPin size={14} /> Open in Google Maps
+          </a>
         </div>
       </div>
     </div>

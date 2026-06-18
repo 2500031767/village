@@ -41,8 +41,8 @@ export default function About() {
             <div className="stat-icon teal"><MapPin size={24} /></div>
             <div className="stat-content">
               <div className="stat-label">Location</div>
-              <div className="stat-value" style={{ fontSize: '1.1rem' }}>Mylukuru</div>
-              <div className="stat-desc">Mandal, Nellore District</div>
+              <div className="stat-value" style={{ fontSize: '1.1rem' }}>Mylavaram</div>
+              <div className="stat-desc">Mandal, NTR District</div>
             </div>
           </div>
           <div className="stat-card">
@@ -124,17 +124,55 @@ export default function About() {
       {/* Map */}
       <div className="section">
         <h2 className="section-title"><MapPin size={22} className="icon" /> Location Map</h2>
-        <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d30000!2d79.88!3d14.50!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTTCsDMwJzAwLjAiTiA3OcKwNTInNDguMCJF!5e0!3m2!1sen!2sin!4v1"
-            width="100%"
-            height="400"
-            style={{ border: 0, display: 'block' }}
-            allowFullScreen=""
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Village Map"
-          />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }} className="map-grid">
+
+          {/* Satellite map pinned to village school landmark */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
+            <div style={{ padding: '10px 16px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              📍 Map View — Seetharampuram Thanda
+            </div>
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d980.8!2d80.6061103!3d16.8612158!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a35c51527592c65%3A0xa7f92195f423688b!2z4K6q4K6_4K6v4K6-4K6w4K6f4K6-4K6a4K-N4K6o4K6k4K-N4K6o4K6k!5e1!3m2!1sen!2sin!4v1"
+              width="100%"
+              height="380"
+              style={{ border: 0, display: 'block' }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Village Map View"
+            />
+          </div>
+
+          {/* Street View */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
+            <div style={{ padding: '10px 16px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              🚶 Street View — Village Ground Level
+            </div>
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!4v1!6m8!1m7!1s66ZddHmuiXW8FxrZZqms6Q!2m2!1d16.86085!2d80.6077994!3f205.12!4f0!5f0.7820865974627469"
+              width="100%"
+              height="380"
+              style={{ border: 0, display: 'block' }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Village Street View"
+            />
+          </div>
+        </div>
+
+        <div style={{ marginTop: 'var(--space-md)', textAlign: 'center' }}>
+          <a
+            href="https://www.google.com/maps/place/?q=place_id:ChIJZSxZJxXFNTkRi2gjpJUh-ac"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline"
+            style={{ fontSize: '0.85rem' }}
+          >
+            <MapPin size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+            Open in Google Maps
+          </a>
         </div>
       </div>
     </div>

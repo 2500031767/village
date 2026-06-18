@@ -704,4 +704,314 @@ router.delete('/nri/volunteers/:id', authenticateToken, (req, res, next) => {
   }
 });
 
+// ─── CENSUS (HOUSEHOLDS) ENDPOINTS ───
+router.get('/census', (req, res, next) => {
+  try {
+    const rows = db.prepare('SELECT * FROM census ORDER BY id DESC').all();
+    const camelRows = rows.map(r => ({
+      id: r.id,
+      year: r.year,
+      totalPopulation: r.total_population,
+      households: r.households,
+      malePopulation: r.male_population,
+      femalePopulation: r.female_population,
+      childPopulation: r.child_population,
+      seniorPopulation: r.senior_population
+    }));
+    res.json(camelRows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST endpoint for census statistics
+router.post('/census', authenticateToken, (req, res, next) => {
+  try {
+    // Only admin users can create census records
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+    const {
+      year,
+      totalPopulation,
+      households,
+      malePopulation,
+      femalePopulation,
+      childPopulation,
+      seniorPopulation
+    } = req.body;
+    if (year === undefined) {
+      return res.status(400).json({ error: 'Year is required' });
+    }
+    const stmt = db.prepare(`
+      INSERT INTO census (
+        year, total_population, households, male_population,
+        female_population, child_population, senior_population
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      year,
+      totalPopulation ?? null,
+      households ?? null,
+      malePopulation ?? null,
+      femalePopulation ?? null,
+      childPopulation ?? null,
+      seniorPopulation ?? null
+    );
+    const newRow = db.prepare('SELECT * FROM census WHERE id = ?').get(result.lastInsertRowid);
+    // Convert to camelCase for frontend compatibility
+    const camelRow = {
+      id: newRow.id,
+      year: newRow.year,
+      totalPopulation: newRow.total_population,
+      households: newRow.households,
+      malePopulation: newRow.male_population,
+      femalePopulation: newRow.female_population,
+      childPopulation: newRow.child_population,
+      seniorPopulation: newRow.senior_population
+    };
+    res.status(201).json(camelRow);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT endpoint for census statistics
+router.put('/census/:id', authenticateToken, (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+    const { id } = req.params;
+    const existing = db.prepare('SELECT * FROM census WHERE id = ?').get(id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Census record not found' });
+    }
+    const {
+      year,
+      totalPopulation,
+      households,
+      malePopulation,
+      femalePopulation,
+      childPopulation,
+      seniorPopulation
+    } = req.body;
+    const stmt = db.prepare(`
+      UPDATE census SET
+        year = ?, total_population = ?, households = ?,
+        male_population = ?, female_population = ?, child_population = ?, senior_population = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    stmt.run(
+      year !== undefined ? year : existing.year,
+      totalPopulation !== undefined ? totalPopulation : existing.total_population,
+      households !== undefined ? households : existing.households,
+      malePopulation !== undefined ? malePopulation : existing.male_population,
+      femalePopulation !== undefined ? femalePopulation : existing.female_population,
+      childPopulation !== undefined ? childPopulation : existing.child_population,
+      seniorPopulation !== undefined ? seniorPopulation : existing.senior_population,
+      id
+    );
+    const updatedRow = db.prepare('SELECT * FROM census WHERE id = ?').get(id);
+    const camelRow = {
+      id: updatedRow.id,
+      year: updatedRow.year,
+      totalPopulation: updatedRow.total_population,
+      households: updatedRow.households,
+      malePopulation: updatedRow.male_population,
+      femalePopulation: updatedRow.female_population,
+      childPopulation: updatedRow.child_population,
+      seniorPopulation: updatedRow.senior_population
+    };
+    res.json(camelRow);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/households/:id', authenticateToken, (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+    const { id } = req.params;
+    const existing = db.prepare('SELECT * FROM households WHERE id = ?').get(id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Household not found' });
+    }
+    const {
+      head_name,
+      head_age,
+      head_gender,
+      head_education,
+      head_occupation,
+      spouse_name,
+      spouse_education,
+      spouse_occupation,
+      num_members,
+      category,
+      religion,
+      ration_card_type,
+      annual_income,
+      house_type,
+      has_electricity,
+      has_toilet,
+      has_drainage,
+      has_internet,
+      has_solar,
+      cooking_fuel,
+      water_source,
+      land_acres,
+      irrigation_type,
+      crops,
+      livestock,
+      remarks
+    } = req.body;
+    const stmt = db.prepare(`
+      UPDATE households SET
+        head_name = ?, head_age = ?, head_gender = ?, head_education = ?, head_occupation = ?,
+        spouse_name = ?, spouse_education = ?, spouse_occupation = ?, num_members = ?,
+        category = ?, religion = ?, ration_card_type = ?, annual_income = ?, house_type = ?,
+        has_electricity = ?, has_toilet = ?, has_drainage = ?, has_internet = ?, has_solar = ?,
+        cooking_fuel = ?, water_source = ?, land_acres = ?, irrigation_type = ?, crops = ?,
+        livestock = ?, remarks = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    stmt.run(
+      head_name !== undefined ? head_name : existing.head_name,
+      head_age !== undefined ? head_age : existing.head_age,
+      head_gender !== undefined ? head_gender : existing.head_gender,
+      head_education !== undefined ? head_education : existing.head_education,
+      head_occupation !== undefined ? head_occupation : existing.head_occupation,
+      spouse_name !== undefined ? spouse_name : existing.spouse_name,
+      spouse_education !== undefined ? spouse_education : existing.spouse_education,
+      spouse_occupation !== undefined ? spouse_occupation : existing.spouse_occupation,
+      num_members !== undefined ? num_members : existing.num_members,
+      category !== undefined ? category : existing.category,
+      religion !== undefined ? religion : existing.religion,
+      ration_card_type !== undefined ? ration_card_type : existing.ration_card_type,
+      annual_income !== undefined ? annual_income : existing.annual_income,
+      house_type !== undefined ? house_type : existing.house_type,
+      has_electricity !== undefined ? has_electricity : existing.has_electricity,
+      has_toilet !== undefined ? has_toilet : existing.has_toilet,
+      has_drainage !== undefined ? has_drainage : existing.has_drainage,
+      has_internet !== undefined ? has_internet : existing.has_internet,
+      has_solar !== undefined ? has_solar : existing.has_solar,
+      cooking_fuel !== undefined ? cooking_fuel : existing.cooking_fuel,
+      water_source !== undefined ? water_source : existing.water_source,
+      land_acres !== undefined ? land_acres : existing.land_acres,
+      irrigation_type !== undefined ? irrigation_type : existing.irrigation_type,
+      crops !== undefined ? crops : existing.crops,
+      livestock !== undefined ? livestock : existing.livestock,
+      remarks !== undefined ? remarks : existing.remarks,
+      id
+    );
+    const updatedRow = db.prepare('SELECT * FROM households WHERE id = ?').get(id);
+    res.json(updatedRow);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE endpoint for census statistics
+router.delete('/census/:id', authenticateToken, (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+    const { id } = req.params;
+    const stmt = db.prepare('DELETE FROM census WHERE id = ?');
+    const result = stmt.run(id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Census record not found' });
+    }
+    res.json({ message: 'Census record deleted successfully', id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─── VILLAGE STATS ENDPOINTS ───
+
+// Get all stats (optionally filtered by category)
+router.get('/village-stats', (req, res, next) => {
+  try {
+    const { category } = req.query;
+    const rows = category
+      ? db.prepare('SELECT * FROM village_stats WHERE category = ? ORDER BY sort_order ASC, stat_key ASC').all(category)
+      : db.prepare('SELECT * FROM village_stats ORDER BY category ASC, sort_order ASC, stat_key ASC').all();
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get all distinct categories
+router.get('/village-stats/categories', (req, res, next) => {
+  try {
+    const rows = db.prepare('SELECT DISTINCT category FROM village_stats ORDER BY category ASC').all();
+    res.json(rows.map(r => r.category));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Create or update a stat (upsert by category+stat_key)
+router.post('/village-stats', authenticateToken, (req, res, next) => {
+  try {
+    const { category, stat_key, stat_value, sort_order } = req.body;
+    if (!category || !stat_key || stat_value === undefined) {
+      return res.status(400).json({ error: 'category, stat_key and stat_value are required' });
+    }
+    const stmt = db.prepare(`
+      INSERT INTO village_stats (category, stat_key, stat_value, sort_order, updated_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(category, stat_key) DO UPDATE SET
+        stat_value = excluded.stat_value,
+        sort_order = excluded.sort_order,
+        updated_at = CURRENT_TIMESTAMP
+    `);
+    stmt.run(category, stat_key, String(stat_value), sort_order ?? 0);
+    const row = db.prepare('SELECT * FROM village_stats WHERE category = ? AND stat_key = ?').get(category, stat_key);
+    res.status(201).json(row);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update a stat by id
+router.put('/village-stats/:id', authenticateToken, (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { category, stat_key, stat_value, sort_order } = req.body;
+    const existing = db.prepare('SELECT * FROM village_stats WHERE id = ?').get(id);
+    if (!existing) return res.status(404).json({ error: 'Stat not found' });
+    db.prepare(`
+      UPDATE village_stats SET category=?, stat_key=?, stat_value=?, sort_order=?, updated_at=CURRENT_TIMESTAMP WHERE id=?
+    `).run(
+      category ?? existing.category,
+      stat_key ?? existing.stat_key,
+      stat_value !== undefined ? String(stat_value) : existing.stat_value,
+      sort_order ?? existing.sort_order,
+      id
+    );
+    res.json(db.prepare('SELECT * FROM village_stats WHERE id = ?').get(id));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete a stat
+router.delete('/village-stats/:id', authenticateToken, (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = db.prepare('DELETE FROM village_stats WHERE id = ?').run(id);
+    if (result.changes === 0) return res.status(404).json({ error: 'Stat not found' });
+    res.json({ message: 'Stat deleted', id });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

@@ -199,4 +199,46 @@ export const volunteerAPI = {
   }
 };
 
+export const censusAPI = {
+  getAll: async () => {
+    const res = await api.get('/api/census');
+    return res.data;
+  },
+  create: async (data) => {
+    const res = await api.post('/api/census', data);
+    return res.data;
+  },
+  update: async (id, data) => {
+    const res = await api.put(`/api/census/${id}`, data);
+    return res.data;
+  },
+  delete: async (id) => {
+    const res = await api.delete(`/api/census/${id}`);
+    return res.data;
+  }
+};
+
+export const villageStatsAPI = {
+  getAll: async () => {
+    const res = await api.get('/api/village-stats');
+    return res.data;
+  },
+  getCategories: async () => {
+    const res = await api.get('/api/village-stats/categories');
+    return res.data;
+  },
+  upsert: async (data) => {
+    const res = await api.post('/api/village-stats', data);
+    return res.data;
+  },
+  update: async (id, data) => {
+    const res = await api.put(`/api/village-stats/${id}`, data);
+    return res.data;
+  },
+  delete: async (id) => {
+    const res = await api.delete(`/api/village-stats/${id}`);
+    return res.data;
+  }
+};
+
 export default api;

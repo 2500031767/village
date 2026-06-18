@@ -55,6 +55,7 @@ export function initializeDatabase() {
     );
 
     -- Households (census)
+
     CREATE TABLE IF NOT EXISTS households (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       head_name TEXT NOT NULL,
@@ -86,6 +87,32 @@ export function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+    
+    -- Census statistics (yearly aggregates)
+    CREATE TABLE IF NOT EXISTS census (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      year INTEGER NOT NULL,
+      total_population INTEGER,
+      households INTEGER,
+      male_population INTEGER,
+      female_population INTEGER,
+      child_population INTEGER,
+      senior_population INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Village statistics (admin-editable key-value stats grouped by category)
+    CREATE TABLE IF NOT EXISTS village_stats (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT NOT NULL,
+      stat_key TEXT NOT NULL,
+      stat_value TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(category, stat_key)
+    );
+
 
     -- Household members
     CREATE TABLE IF NOT EXISTS household_members (

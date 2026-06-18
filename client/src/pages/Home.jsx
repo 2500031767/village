@@ -182,7 +182,7 @@ export default function Home() {
           <div className="hero-meta animate-fadeInUp stagger-3">
             <div className="meta-item">
               <MapPin size={16} />
-              <span>Mylukuru Mandal, Nellore District, Andhra Pradesh</span>
+              <span>Mylavaram Mandal, NTR District, Andhra Pradesh</span>
             </div>
           </div>
 

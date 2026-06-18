@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   authAPI, businessesAPI, notificationsAPI,
   galleryAPI, schemesAPI, issuesAPI,
-  nriProjectsAPI, volunteerAPI
+  nriProjectsAPI, volunteerAPI, censusAPI, villageStatsAPI
 } from '../data/api';
 import {
   Store, Bell, Image, Shield, AlertTriangle,
   Heart, HandHeart, Plus, Trash2, Edit3,
-  LogOut, User, Loader, CheckCircle, HelpCircle
+  LogOut, User, Loader, CheckCircle, HelpCircle, Users, BarChart3
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -23,7 +23,9 @@ export default function AdminDashboard() {
     schemes: [],
     issues: [],
     projects: [],
-    volunteers: []
+    volunteers: [],
+    census: [],
+    villagestats: []
   });
 
   // Modal & form states
@@ -61,6 +63,7 @@ export default function AdminDashboard() {
 
     const fetchData = async () => {
       setLoading(true);
+      console.log('Fetching data for tab:', activeTab);
       try {
         if (activeTab === 'notifications') {
           const res = await notificationsAPI.getAll();
@@ -83,10 +86,17 @@ export default function AdminDashboard() {
         } else if (activeTab === 'volunteers') {
           const res = await volunteerAPI.getAll();
           setData(prev => ({ ...prev, volunteers: res }));
+        } else if (activeTab === 'census') {
+          const res = await censusAPI.getAll();
+          setData(prev => ({ ...prev, census: res }));
+        } else if (activeTab === 'villagestats') {
+          const res = await villageStatsAPI.getAll();
+          setData(prev => ({ ...prev, villagestats: res }));
         }
       } catch (err) {
-        console.error(err);
-        showFeedback('Error fetching data from server.', 'danger');
+        console.error('Fetch error for', activeTab, err);
+        const msg = err?.response?.data?.message || err.message || 'Error fetching data from server.';
+        showFeedback(msg, 'danger');
       } finally {
         setLoading(false);
       }
@@ -157,6 +167,19 @@ export default function AdminDashboard() {
       defaults.category = '';
       defaults.description = '';
       defaults.contact_info = '';
+    } else if (activeTab === 'census') {
+      defaults.year = '';
+      defaults.totalPopulation = '';
+      defaults.households = '';
+      defaults.malePopulation = '';
+      defaults.femalePopulation = '';
+      defaults.childPopulation = '';
+      defaults.seniorPopulation = '';
+    } else if (activeTab === 'villagestats') {
+      defaults.category = '';
+      defaults.stat_key = '';
+      defaults.stat_value = '';
+      defaults.sort_order = 0;
     }
 
     setFormValues(defaults);
@@ -301,6 +324,19 @@ export default function AdminDashboard() {
           }));
           showFeedback('Issue updated successfully!');
         }
+      } else if (activeTab === 'census') {
+        if (modalMode === 'add') {
+          const newItem = await censusAPI.create(formValues);
+          setData(prev => ({ ...prev, census: [newItem, ...prev.census] }));
+          showFeedback('Census record created successfully!');
+        } else {
+          const updatedItem = await censusAPI.update(editingId, formValues);
+          setData(prev => ({
+            ...prev,
+            census: prev.census.map(item => item.id === editingId ? updatedItem : item)
+          }));
+          showFeedback('Census record updated successfully!');
+        }
       } else if (activeTab === 'projects') {
         if (modalMode === 'add') {
           const newItem = await nriProjectsAPI.create(formValues);
@@ -326,6 +362,29 @@ export default function AdminDashboard() {
             volunteers: prev.volunteers.map(item => item.id === editingId ? updatedItem : item)
           }));
           showFeedback('Volunteer opportunity updated successfully!');
+        }
+      } else if (activeTab === 'villagestats') {
+        if (modalMode === 'add') {
+          // upsert — creates or updates by category+stat_key
+          const newItem = await villageStatsAPI.upsert(formValues);
+          // replace if exists, else prepend
+          setData(prev => {
+            const exists = prev.villagestats.find(i => i.id === newItem.id);
+            return {
+              ...prev,
+              villagestats: exists
+                ? prev.villagestats.map(i => i.id === newItem.id ? newItem : i)
+                : [newItem, ...prev.villagestats]
+            };
+          });
+          showFeedback('Village stat saved successfully!');
+        } else {
+          const updatedItem = await villageStatsAPI.update(editingId, formValues);
+          setData(prev => ({
+            ...prev,
+            villagestats: prev.villagestats.map(item => item.id === editingId ? updatedItem : item)
+          }));
+          showFeedback('Village stat updated successfully!');
         }
       }
       setShowModal(false);
@@ -357,17 +416,23 @@ export default function AdminDashboard() {
       } else if (activeTab === 'issues') {
         await issuesAPI.delete(id);
         setData(prev => ({ ...prev, issues: prev.issues.filter(item => item.id !== id) }));
+      } else if (activeTab === 'census') {
+        await censusAPI.delete(id);
+        setData(prev => ({ ...prev, census: prev.census.filter(item => item.id !== id) }));
       } else if (activeTab === 'projects') {
         await nriProjectsAPI.delete(id);
         setData(prev => ({ ...prev, projects: prev.projects.filter(item => item.id !== id) }));
       } else if (activeTab === 'volunteers') {
         await volunteerAPI.delete(id);
         setData(prev => ({ ...prev, volunteers: prev.volunteers.filter(item => item.id !== id) }));
+      } else if (activeTab === 'villagestats') {
+        await villageStatsAPI.delete(id);
+        setData(prev => ({ ...prev, villagestats: prev.villagestats.filter(item => item.id !== id) }));
       }
       showFeedback('Item deleted successfully!');
     } catch (err) {
       console.error(err);
-      showFeedback('Failed to delete the item.', 'danger');
+      showFeedback('Failed to delete. ' + (err?.response?.data?.error || err.message), 'danger');
     }
   };
 
@@ -459,7 +524,9 @@ export default function AdminDashboard() {
             { id: 'schemes', label: 'Govt. Schemes', icon: Shield },
             { id: 'issues', label: 'Village Issues', icon: AlertTriangle },
             { id: 'projects', label: 'NRI Projects', icon: Heart },
-            { id: 'volunteers', label: 'Volunteers', icon: HandHeart }
+            { id: 'volunteers', label: 'Volunteers', icon: HandHeart },
+            { id: 'census', label: 'Census', icon: Users },
+            { id: 'villagestats', label: 'Village Stats', icon: BarChart3 },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -500,7 +567,7 @@ export default function AdminDashboard() {
 
           <div className="flex-between mb-lg">
             <h3 style={{ textTransform: 'capitalize', fontSize: '1.2rem' }}>
-              Manage {activeTab === 'projects' ? 'NRI Fund Projects' : activeTab === 'volunteers' ? 'Volunteer Roles' : activeTab}
+              Manage {activeTab === 'projects' ? 'NRI Fund Projects' : activeTab === 'volunteers' ? 'Volunteer Roles' : activeTab === 'villagestats' ? 'Village Stats' : activeTab}
             </h3>
             <button className="btn btn-primary btn-sm" onClick={openAddModal} style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
               <Plus size={16} /> Add New
@@ -544,7 +611,8 @@ export default function AdminDashboard() {
             padding: 'var(--space-xl)'
           }}>
             <h3 style={{ marginBottom: 'var(--space-lg)', textTransform: 'capitalize' }}>
-              {modalMode === 'add' ? 'Add' : 'Edit'} {activeTab.slice(0, -1)}
+              {modalMode === 'add' ? 'Add' : 'Edit'}{' '}
+              {activeTab === 'villagestats' ? 'Village Stat' : activeTab.slice(0, -1)}
             </h3>
 
             <form onSubmit={handleFormSubmit} className="flex-col gap-md">
@@ -647,6 +715,26 @@ export default function AdminDashboard() {
               <th>Actions</th>
             </tr>
           )}
+          {activeTab === 'census' && (
+            <tr>
+              <th>Year</th>
+              <th>Total Population</th>
+              <th>Households</th>
+              <th>Male</th>
+              <th>Female</th>
+              <th>Children</th>
+              <th>Senior</th>
+              <th>Actions</th>
+            </tr>
+          )}
+          {activeTab === 'villagestats' && (
+            <tr>
+              <th>Category</th>
+              <th>Stat Name</th>
+              <th>Value</th>
+              <th>Actions</th>
+            </tr>
+          )}
         </thead>
         <tbody>
           {list.map(item => (
@@ -724,6 +812,24 @@ export default function AdminDashboard() {
                   <td className="font-bold">{item.title}</td>
                   <td><span className="badge primary">{item.category}</span></td>
                   <td style={{ fontSize: '0.8rem' }}>{item.contact_info || 'N/A'}</td>
+                </>
+              )}
+              {activeTab === 'census' && (
+                <>
+                  <td className="font-bold">{item.year}</td>
+                  <td>{item.totalPopulation}</td>
+                  <td>{item.households}</td>
+                  <td>{item.malePopulation}</td>
+                  <td>{item.femalePopulation}</td>
+                  <td>{item.childPopulation}</td>
+                  <td>{item.seniorPopulation}</td>
+                </>
+              )}
+              {activeTab === 'villagestats' && (
+                <>
+                  <td><span className="badge primary" style={{ textTransform: 'capitalize' }}>{item.category}</span></td>
+                  <td className="font-bold">{item.stat_key}</td>
+                  <td><strong>{item.stat_value}</strong></td>
                 </>
               )}
 
@@ -1223,6 +1329,248 @@ export default function AdminDashboard() {
               rows={4}
               placeholder="Describe the volunteering activity and schedule..."
             />
+          </div>
+        </>
+      );
+    }
+
+    if (activeTab === 'census') {
+      return (
+        <>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Year</label>
+            <input
+              name="year"
+              type="number"
+              value={formValues.year || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. 2023"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Total Population</label>
+            <input
+              name="totalPopulation"
+              type="number"
+              value={formValues.totalPopulation || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. 5423"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Households</label>
+            <input
+              name="households"
+              type="number"
+              value={formValues.households || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. 1200"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Male Population</label>
+            <input
+              name="malePopulation"
+              type="number"
+              value={formValues.malePopulation || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. 2700"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Female Population</label>
+            <input
+              name="femalePopulation"
+              type="number"
+              value={formValues.femalePopulation || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. 2700"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Child Population</label>
+            <input
+              name="childPopulation"
+              type="number"
+              value={formValues.childPopulation || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. 800"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Senior Population</label>
+            <input
+              name="seniorPopulation"
+              type="number"
+              value={formValues.seniorPopulation || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. 500"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Occupation Distribution</label>
+            <input
+              name="occupationDistribution"
+              value={formValues.occupationDistribution || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. Agriculture, Business"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Social Categories</label>
+            <input
+              name="socialCategories"
+              value={formValues.socialCategories || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. ST, SC, OC"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Adult Literacy Rate (%)</label>
+            <input
+              name="adultLiteracyRate"
+              type="number"
+              value={formValues.adultLiteracyRate || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. 85"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>School Enrollment Rate (%)</label>
+            <input
+              name="schoolEnrollmentRate"
+              type="number"
+              value={formValues.schoolEnrollmentRate || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. 92"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Male Illiterate</label>
+            <input
+              name="maleIlliterate"
+              type="number"
+              value={formValues.maleIlliterate || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. 10"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Female Illiterate</label>
+            <input
+              name="femaleIlliterate"
+              type="number"
+              value={formValues.femaleIlliterate || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. 12"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Male Graduates</label>
+            <input
+              name="maleGraduates"
+              type="number"
+              value={formValues.maleGraduates || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. 30"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Female Graduates</label>
+            <input
+              name="femaleGraduates"
+              type="number"
+              value={formValues.femaleGraduates || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. 28"
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Migration Count</label>
+            <input
+              name="migrationCount"
+              type="number"
+              value={formValues.migrationCount || ''}
+              onChange={handleInputChange}
+              placeholder="e.g. 5"
+            />
+          </div>
+        </>
+      );
+    }
+
+    if (activeTab === 'villagestats') {
+      return (
+        <>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Category</label>
+            <select
+              name="category"
+              value={formValues.category || ''}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">-- Select Category --</option>
+              {[
+                'overview','demographics','age_groups','social',
+                'education','occupation','housing','water',
+                'agriculture','health','economics','income_buckets',
+                'financial','schemes_coverage','vehicles','appliances',
+                'problems','vulnerability','scores'
+              ].map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <p className="text-xs text-muted" style={{ marginTop: '2px' }}>
+              e.g. social → ST/OC/SC/BC counts | education → literacy rates
+            </p>
+          </div>
+
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Stat Name (Key)</label>
+            <input
+              name="stat_key"
+              value={formValues.stat_key || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. ST (Scheduled Tribe)"
+            />
+            <p className="text-xs text-muted" style={{ marginTop: '2px' }}>
+              Must match exactly for the Census page to pick it up
+            </p>
+          </div>
+
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Value</label>
+            <input
+              name="stat_value"
+              value={formValues.stat_value ?? ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. 269"
+            />
+          </div>
+
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sort Order</label>
+            <input
+              name="sort_order"
+              type="number"
+              value={formValues.sort_order ?? 0}
+              onChange={handleInputChange}
+              placeholder="e.g. 1"
+            />
+            <p className="text-xs text-muted" style={{ marginTop: '2px' }}>
+              Lower numbers appear first within the same category
+            </p>
           </div>
         </>
       );
