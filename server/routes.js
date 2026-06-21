@@ -8,7 +8,16 @@ import twilio from 'twilio';
 import db from './config/db.js';
 
 // Twilio client initialization (environment variables must be set)
-const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+let twilioClient = null;
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_ACCOUNT_SID.startsWith('AC')) {
+  try {
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  } catch (err) {
+    console.error('Twilio initialization error:', err.message);
+  }
+} else {
+  console.log('⚠️ Twilio is not configured properly (ACCOUNT_SID must start with AC). SMS OTP will be disabled.');
+}
 import { authenticateToken, generateToken } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -114,11 +123,15 @@ router.post('/auth/request-otp', async (req, res, next) => {
 
     // Send OTP via Twilio SMS
     try {
-      await twilioClient.messages.create({
-        body: `Your OTP code is ${code}. It expires in 5 minutes.`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: phone.startsWith('+') ? phone : `+${phone}`
-      });
+      if (twilioClient) {
+        await twilioClient.messages.create({
+          body: `Your OTP code is ${code}. It expires in 5 minutes.`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: phone.startsWith('+') ? phone : `+${phone}`
+        });
+      } else {
+        console.log('Twilio client not configured. Simulated OTP sending.');
+      }
     } catch (smsErr) {
       console.error('Failed to send OTP SMS:', smsErr);
       // Continue without aborting; still respond that OTP was sent (or could indicate failure)
