@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// Base URL — empty so all regular requests go through Vite proxy
-const API_BASE = '';
+// Base URL — empty in dev for Vite proxy, uses VITE_API_URL in production
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 // Direct server URL — used only for file uploads to bypass Vite proxy
 // (Vite proxy aborts large multipart requests with ECONNABORTED)
-const SERVER_DIRECT = 'http://localhost:5000';
+const SERVER_DIRECT = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: API_BASE
