@@ -4,7 +4,11 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import twilio from 'twilio';
 import db from './config/db.js';
+
+// Twilio client initialization (environment variables must be set)
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 import { authenticateToken, generateToken } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -88,6 +92,74 @@ router.post('/auth/login', (req, res, next) => {
       token,
       user: { id: user.id, username: user.username, role: user.role }
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- OTP LOGIN ---- //
+// Request OTP endpoint
+router.post('/auth/request-otp', async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: 'Phone number is required' });
+
+    // Generate a 6‑digit numeric OTP
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+
+    // Insert or replace existing OTP for this phone
+    db.prepare('INSERT INTO otp_codes (phone, code, expires_at) VALUES (?, ?, ?)')
+      .run(phone, code, expiresAt);
+
+    // Send OTP via Twilio SMS
+    try {
+      await twilioClient.messages.create({
+        body: `Your OTP code is ${code}. It expires in 5 minutes.`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: phone.startsWith('+') ? phone : `+${phone}`
+      });
+    } catch (smsErr) {
+      console.error('Failed to send OTP SMS:', smsErr);
+      // Continue without aborting; still respond that OTP was sent (or could indicate failure)
+    }
+    console.log(`Generated OTP for ${phone}: ${code}`);
+
+    return res.json({ message: 'OTP sent', otp: code });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Verify OTP endpoint
+router.post('/auth/verify-otp', (req, res, next) => {
+  try {
+    const { phone, code } = req.body;
+    if (!phone || !code) return res.status(400).json({ error: 'Phone and code are required' });
+
+    const otpRow = db.prepare('SELECT * FROM otp_codes WHERE phone = ? AND code = ?').get(phone, code);
+    if (!otpRow) return res.status(401).json({ error: 'Invalid OTP' });
+
+    const now = new Date();
+    if (new Date(otpRow.expires_at) < now) {
+      return res.status(401).json({ error: 'OTP has expired' });
+    }
+
+    // OTP is valid – find or create the member
+    let member = db.prepare('SELECT * FROM village_members WHERE phone = ?').get(phone);
+    if (!member) {
+      const result = db.prepare('INSERT INTO village_members (name, phone) VALUES (?, ?)')
+        .run('Guest', phone);
+      member = db.prepare('SELECT * FROM village_members WHERE id = ?').get(result.lastInsertRowid);
+    }
+
+    // Generate a JWT token for the member (role: member)
+    const token = generateToken({ id: member.id, username: member.name, role: 'member' });
+
+    // Optionally delete the used OTP
+    db.prepare('DELETE FROM otp_codes WHERE id = ?').run(otpRow.id);
+
+    return res.json({ token, user: { id: member.id, name: member.name, phone: member.phone, role: 'member' } });
   } catch (err) {
     next(err);
   }
@@ -451,19 +523,183 @@ router.delete('/schemes/:id', authenticateToken, (req, res, next) => {
 });
 
 
-// ─── VILLAGE ISSUES ENDPOINTS ───
+// ─── VILLAGE MEMBER AUTH ───
 
-// Get all issues
-router.get('/issues', (req, res, next) => {
+// Register or login a village member (no password — name + phone)
+router.post('/member/login', (req, res, next) => {
   try {
-    const rows = db.prepare('SELECT * FROM issues ORDER BY priority ASC, id DESC').all();
+    const { name, phone } = req.body;
+    if (!name || !phone) return res.status(400).json({ error: 'Name and phone are required' });
+
+    // Find or create member
+    let member = db.prepare('SELECT * FROM village_members WHERE phone = ?').get(phone);
+    if (!member) {
+      const result = db.prepare(
+        'INSERT INTO village_members (name, phone) VALUES (?, ?)'
+      ).run(name.trim(), phone.trim());
+      member = db.prepare('SELECT * FROM village_members WHERE id = ?').get(result.lastInsertRowid);
+    }
+    res.json({ member });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get member's own issues
+router.get('/member/:phone/issues', async (req, res, next) => {
+  try {
+    const { phone } = req.params;
+    const rows = db.prepare(
+      "SELECT * FROM issues WHERE reporter_phone = ? ORDER BY id DESC"
+    ).all(phone);
+    const response = await otpAuthAPI.requestOtp(phone);
+    if (response && response.otp) {
+      setSentOtp(response.otp);
+    }
     res.json(rows);
   } catch (err) {
     next(err);
   }
 });
 
-// Create issue
+
+
+// ─── VILLAGE RATINGS ───
+
+router.get('/ratings', (req, res, next) => {
+  try {
+    const rows = db.prepare('SELECT * FROM village_ratings ORDER BY id DESC').all();
+    const avg  = db.prepare('SELECT AVG(rating) as avg, COUNT(*) as total FROM village_ratings').get();
+    res.json({ ratings: rows, average: avg.avg ? Number(avg.avg).toFixed(1) : null, total: avg.total });
+  } catch (err) { next(err); }
+});
+
+router.post('/ratings', (req, res, next) => {
+  try {
+    const { rating, comment, reviewer_name, reviewer_type } = req.body;
+    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating must be 1–5' });
+    const result = db.prepare(
+      'INSERT INTO village_ratings (rating, comment, reviewer_name, reviewer_type) VALUES (?, ?, ?, ?)'
+    ).run(Number(rating), comment || null, reviewer_name || 'Anonymous', reviewer_type || 'visitor');
+    const row = db.prepare('SELECT * FROM village_ratings WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(row);
+  } catch (err) { next(err); }
+});
+
+// Get all issues (public — shows only approved/open/resolved, not pending)
+router.get('/issues', (req, res, next) => {
+  try {
+    const rows = db.prepare(
+      "SELECT * FROM issues WHERE status != 'pending' ORDER BY priority ASC, id DESC"
+    ).all();
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Public issue report — no auth needed, status starts as 'pending'
+router.post('/issues/report', (req, res, next) => {
+  try {
+    const { title, category, description, reporter_name, reporter_phone } = req.body;
+    if (!title || !category) {
+      return res.status(400).json({ error: 'Title and category are required' });
+    }
+
+    const desc = description
+      ? `${description}${reporter_name ? '\n\nReported by: ' + reporter_name : ''}${reporter_phone ? ' | Phone: ' + reporter_phone : ''}`
+      : (reporter_name ? `Reported by: ${reporter_name}${reporter_phone ? ' | ' + reporter_phone : ''}` : null);
+
+    const stmt = db.prepare(
+      'INSERT INTO issues (title, category, description, reported_count, priority, status) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    const result = stmt.run(title, category, desc, 1, 99, 'pending');
+    const newRow = db.prepare('SELECT * FROM issues WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(newRow);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// "Me too" — increment reported_count on an existing open issue and recalculate priorities
+router.post('/issues/:id/upvote', (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const issue = db.prepare("SELECT * FROM issues WHERE id = ? AND status != 'pending'").get(id);
+    if (!issue) return res.status(404).json({ error: 'Issue not found or not yet published' });
+
+    // Increment count on this issue
+    db.prepare('UPDATE issues SET reported_count = reported_count + 1 WHERE id = ?').run(id);
+
+    // Sum reported_count per category across all non-pending issues
+    const categoryTotals = db.prepare(`
+      SELECT category, SUM(reported_count) as total
+      FROM issues
+      WHERE status != 'pending' AND category IS NOT NULL
+      GROUP BY category
+      ORDER BY total DESC
+    `).all();
+
+    // Assign priority rank per category (1 = most reported category)
+    const categoryRank = {};
+    categoryTotals.forEach((row, index) => {
+      categoryRank[row.category] = index + 1;
+    });
+
+    // Update every non-pending issue's priority based on its category rank
+    const allIssues = db.prepare("SELECT id, category FROM issues WHERE status != 'pending'").all();
+    const updatePriority = db.prepare('UPDATE issues SET priority = ? WHERE id = ?');
+    allIssues.forEach(row => {
+      const rank = categoryRank[row.category] ?? 99;
+      updatePriority.run(rank, row.id);
+    });
+
+    const updated = db.prepare('SELECT * FROM issues WHERE id = ?').get(id);
+    res.json({ updated, categoryTotals });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Recalculate all priorities by category total (admin trigger)
+router.post('/issues/recalculate-priorities', authenticateToken, (req, res, next) => {
+  try {
+    const categoryTotals = db.prepare(`
+      SELECT category, SUM(reported_count) as total
+      FROM issues
+      WHERE status != 'pending' AND category IS NOT NULL
+      GROUP BY category
+      ORDER BY total DESC
+    `).all();
+
+    const categoryRank = {};
+    categoryTotals.forEach((row, index) => {
+      categoryRank[row.category] = index + 1;
+    });
+
+    const allIssues = db.prepare("SELECT id, category FROM issues WHERE status != 'pending'").all();
+    const updatePriority = db.prepare('UPDATE issues SET priority = ? WHERE id = ?');
+    allIssues.forEach(row => {
+      updatePriority.run(categoryRank[row.category] ?? 99, row.id);
+    });
+
+    res.json({ message: 'Priorities recalculated', categoryTotals });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get all issues including pending (admin only)
+router.get('/issues/all', authenticateToken, (req, res, next) => {
+  try {
+    const rows = db.prepare('SELECT * FROM issues ORDER BY status ASC, priority ASC, id DESC').all();
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Create issue (admin)
 router.post('/issues', authenticateToken, (req, res, next) => {
   try {
     const { title, category, description, reported_count, priority, status } = req.body;

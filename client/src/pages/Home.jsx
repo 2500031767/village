@@ -2,15 +2,27 @@ import { useEffect, useState, useRef } from 'react';
 import {
   Users, Home as HomeIcon, MapPin, Wheat, GraduationCap,
   Zap, Flame, Heart, Building2, TrendingUp, BarChart3,
-  ArrowRight, Sparkles, Shield, AlertTriangle, TreePine, Image
+  ArrowRight, Sparkles, Shield, AlertTriangle, TreePine, Image,
+  Star, MessageSquare, CheckCircle, Send
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import villageData from '../data/villageData';
-import { galleryAPI } from '../data/api';
+import { galleryAPI, villageStatsAPI, ratingsAPI, issuesAPI, otpAuthAPI } from '../data/api';
 import './Home.css';
+
+const ISSUE_CATEGORIES = [
+  'Water Supply',
+  'Electricity',
+  'Roads & Infrastructure',
+  'Sanitation & Waste',
+  'Health & Medical',
+  'Education',
+  'Agriculture',
+  'Other'
+];
 
 // Animated counter hook
 function useCounter(end, duration = 2000) {
@@ -61,10 +73,10 @@ function ScoreGauge({ score, label, color = 'var(--primary-light)', size = 90 })
     <div className="score-gauge">
       <div className="score-gauge-circle" style={{ width: size, height: size }}>
         <svg width={size} height={size}>
-          <circle className="gauge-bg" cx={size/2} cy={size/2} r={radius} />
+          <circle className="gauge-bg" cx={size / 2} cy={size / 2} r={radius} />
           <circle
             className="gauge-fill"
-            cx={size/2} cy={size/2} r={radius}
+            cx={size / 2} cy={size / 2} r={radius}
             stroke={color || scoreColor}
             strokeDasharray={circumference}
             strokeDashoffset={offset}
@@ -108,6 +120,15 @@ export default function Home() {
   const [currentBg, setCurrentBg] = useState(0);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
 
+  // Rating system state
+  const [recentIssues, setRecentIssues] = useState([]);
+  const [liveScores, setLiveScores] = useState({});
+  // Member login state
+
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [ratingError, setRatingError] = useState('');
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentBg((prev) => (prev + 1) % heroImages.length);
@@ -123,8 +144,54 @@ export default function Home() {
         const real = photos.filter(p => p.image_url && (p.image_url.startsWith('/') || p.image_url.startsWith('http')));
         setGalleryPhotos(real.slice(0, 6));
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
+
+  // Fetch recent approved issues for home feed
+  useEffect(() => {
+    issuesAPI.getAll()
+      .then(issues => setRecentIssues(issues.slice(0, 5)))
+      .catch(() => { });
+  }, []);
+
+  // Fetch live SVR scores from DB
+  useEffect(() => {
+    villageStatsAPI.getAll()
+      .then(rows => {
+        const map = {};
+        rows.filter(r => r.category === 'scores').forEach(r => { map[r.stat_key] = Number(r.stat_value); });
+        setLiveScores(map);
+      })
+      .catch(() => { });
+  }, []);
+
+// OTP login handlers removed
+
+  const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '', reviewer_name: '', reviewer_type: 'visitor' });
+  const handleRatingChange = (e) => {
+    const { name, value } = e.target;
+    setRatingForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleRatingSubmit = async (e) => {
+    e.preventDefault();
+    setRatingError('');
+    if (!ratingForm.rating || ratingForm.rating < 1 || ratingForm.rating > 5) {
+      setRatingError('Please provide a valid rating (1-5).');
+      return;
+    }
+    setRatingSubmitting(true);
+    try {
+      await ratingsAPI.submit(ratingForm);
+      setRatingSubmitted(true);
+      setRatingForm({ rating: 5, comment: '', reviewer_name: '', reviewer_type: 'visitor' });
+      setTimeout(() => setRatingSubmitted(false), 5000);
+    } catch {
+      setRatingError('Submission failed. Please try again.');
+    } finally {
+      setRatingSubmitting(false);
+    }
+  };
   const [popCount, popRef] = useCounter(data.overview.totalPopulation);
   const [hhCount, hhRef] = useCounter(data.overview.totalHouseholds);
 
@@ -142,12 +209,12 @@ export default function Home() {
         <div className="hero-bg">
           <div className="hero-slideshow">
             {heroImages.map((src, idx) => (
-              <img 
-                key={idx} 
-                src={src} 
-                alt="Village Background" 
-                className={`hero-slideshow-img ${idx === currentBg ? 'active' : ''}`} 
-                loading="lazy" 
+              <img
+                key={idx}
+                src={src}
+                alt="Village Background"
+                className={`hero-slideshow-img ${idx === currentBg ? 'active' : ''}`}
+                loading="lazy"
               />
             ))}
           </div>
@@ -182,7 +249,19 @@ export default function Home() {
           <div className="hero-meta animate-fadeInUp stagger-3">
             <div className="meta-item">
               <MapPin size={16} />
-              <span>Mylavaram Mandal, NTR District, Andhra Pradesh</span>
+              <span style={{
+                background: 'rgba(0,0,0,0.55)',
+                color: '#fff',
+                padding: '4px 14px',
+                borderRadius: '20px',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                backdropFilter: 'blur(6px)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                letterSpacing: '0.02em'
+              }}>
+                Mylavaram Mandal, NTR District, Andhra Pradesh
+              </span>
             </div>
           </div>
 
@@ -209,7 +288,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* ═══ QUICK STATISTICS ═══ */}
+
       <section className="page-container">
         <div className="section">
           <h2 className="section-title">
@@ -238,23 +317,32 @@ export default function Home() {
           <div className="development-grid">
             <div className="card overall-score-card">
               <div className="overall-score-inner">
-                <ScoreGauge score={data.swotAnalysis.scores.overall} label="Overall Score" size={140} color="var(--primary-light)" />
+                <ScoreGauge score={liveScores['Overall Score'] || data.swotAnalysis.scores.overall} label="Overall Score" size={140} color="var(--primary-light)" />
                 <div className="overall-score-text">
                   <h3>Village Development Score</h3>
                   <p>Based on SVR Green Village Rating System by KLEF. Covering education, infrastructure, agriculture, health, water access, and financial inclusion indicators.</p>
-                  <span className="badge primary">KLEF • UBA Survey Data</span>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    <span className="badge primary">KLEF • UBA Survey Data</span>
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => navigate('/highlights')}
+                      style={{ fontSize: '0.75rem', padding: '3px 12px' }}
+                    >
+                      View Full Highlights →
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="card scores-grid">
               <div className="scores-items">
-                <ScoreGauge score={data.swotAnalysis.scores.agriculture} label="Agriculture" color="#22C55E" />
-                <ScoreGauge score={data.swotAnalysis.scores.infrastructure} label="Infrastructure" color="#3B82F6" />
-                <ScoreGauge score={data.swotAnalysis.scores.waterAccess} label="Water Access" color="#06B6D4" />
-                <ScoreGauge score={data.swotAnalysis.scores.health} label="Health" color="#EF4444" />
-                <ScoreGauge score={data.swotAnalysis.scores.financialInclusion} label="Financial" color="#F59E0B" />
-                <ScoreGauge score={data.swotAnalysis.scores.education} label="Education" color="#8B5CF6" />
+                <ScoreGauge score={liveScores['Agriculture'] || data.swotAnalysis.scores.agriculture} label="Agriculture" color="#22C55E" />
+                <ScoreGauge score={liveScores['Infrastructure'] || data.swotAnalysis.scores.infrastructure} label="Infrastructure" color="#3B82F6" />
+                <ScoreGauge score={liveScores['Water Access'] || data.swotAnalysis.scores.waterAccess} label="Water Access" color="#06B6D4" />
+                <ScoreGauge score={liveScores['Health'] || data.swotAnalysis.scores.health} label="Health" color="#EF4444" />
+                <ScoreGauge score={liveScores['Financial Inclusion'] || data.swotAnalysis.scores.financialInclusion} label="Financial" color="#F59E0B" />
+                <ScoreGauge score={liveScores['Education'] || data.swotAnalysis.scores.education} label="Education" color="#8B5CF6" />
               </div>
             </div>
           </div>
@@ -426,6 +514,90 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* ═══ RATE VILLAGE ═══ */}
+        <div className="section">
+          <h2 className="section-title">
+            <Star size={22} className="icon" />
+            Rate our Village
+          </h2>
+
+          <div style={{ gap: 'var(--space-xl)', maxWidth: '600px', margin: '0 auto' }}>
+
+            {/* ── Rating Form ── */}
+            <div className="card" style={{ border: '1px solid var(--primary)' }}>
+              <h4 style={{ color: 'var(--primary-light)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Star size={18} /> Rate the Village
+              </h4>
+              <p className="text-xs text-muted" style={{ marginBottom: '16px' }}>
+                Share your experience as a viewer or visitor. Your feedback is valuable.
+              </p>
+
+              {ratingSubmitted ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: 'rgba(34,197,94,0.1)', borderRadius: '8px', color: 'var(--success)' }}>
+                  <CheckCircle size={22} />
+                  <div>
+                    <strong>Rating submitted successfully!</strong>
+                    <p className="text-xs" style={{ marginTop: '2px', opacity: 0.8 }}>Thank you for your feedback.</p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleRatingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <select
+                      name="rating"
+                      value={ratingForm.rating}
+                      onChange={handleRatingChange}
+                      required
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                      <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                      <option value="3">⭐⭐⭐ (3/5)</option>
+                      <option value="2">⭐⭐ (2/5)</option>
+                      <option value="1">⭐ (1/5)</option>
+                    </select>
+                    <select
+                      name="reviewer_type"
+                      value={ratingForm.reviewer_type}
+                      onChange={handleRatingChange}
+                      required
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      <option value="visitor">Visitor</option>
+                      <option value="resident">Resident</option>
+                      <option value="official">Govt Official</option>
+                      <option value="ngo">NGO Member</option>
+                    </select>
+                  </div>
+                  <input
+                    name="reviewer_name"
+                    value={ratingForm.reviewer_name}
+                    onChange={handleRatingChange}
+                    placeholder="Your name (optional)"
+                    style={{ fontSize: '0.85rem' }}
+                  />
+                  <textarea
+                    name="comment"
+                    value={ratingForm.comment}
+                    onChange={handleRatingChange}
+                    rows={3}
+                    placeholder="Leave a comment about the village..."
+                    style={{ fontSize: '0.85rem', resize: 'vertical' }}
+                  />
+                  {ratingError && <p style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{ratingError}</p>}
+                  <button type="submit" className="btn btn-primary" disabled={ratingSubmitting}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                    <Send size={14} />
+                    {ratingSubmitting ? 'Submitting...' : 'Submit Rating'}
+                  </button>
+                </form>
+              )}
+            </div>
+
+
+          </div>
+        </div>
 
         {/* ═══ EXECUTIVE SUMMARY ═══ */}
         <div className="section">

@@ -143,8 +143,8 @@ export const schemesAPI = {
 };
 
 export const issuesAPI = {
-  getAll: async () => {
-    const res = await api.get('/api/issues');
+  getAll: async (includeAll = false) => {
+    const res = await api.get(includeAll ? '/api/issues/all' : '/api/issues');
     return res.data;
   },
   create: async (data) => {
@@ -157,6 +157,19 @@ export const issuesAPI = {
   },
   delete: async (id) => {
     const res = await api.delete(`/api/issues/${id}`);
+    return res.data;
+  },
+  report: async (data) => {
+    const res = await api.post('/api/issues/report', data);
+    return res.data;
+  },
+  upvote: async (id) => {
+    const res = await api.post(`/api/issues/${id}/upvote`);
+    // returns { updated, categoryTotals }
+    return res.data;
+  },
+  recalculate: async () => {
+    const res = await api.post('/api/issues/recalculate-priorities');
     return res.data;
   }
 };
@@ -237,6 +250,78 @@ export const villageStatsAPI = {
   },
   delete: async (id) => {
     const res = await api.delete(`/api/village-stats/${id}`);
+    return res.data;
+  }
+};
+
+export const ratingsAPI = {
+  getAll: async () => {
+    const res = await api.get('/api/ratings');
+    return res.data;
+  },
+  submit: async (data) => {
+    const res = await api.post('/api/ratings', data);
+    return res.data;
+  }
+};
+
+export const memberAPI = {
+  // Existing single-member helpers (kept for compatibility)
+  login: async (name, phone) => {
+    const res = await api.post('/api/member/login', { name, phone });
+    return res.data;
+  },
+  getMyIssues: async (phone) => await api.get(`/api/member/${phone}/issues`),
+  saveMember: (member) => localStorage.setItem('village_member', JSON.stringify(member)),
+  getMember: () => {
+    try { return JSON.parse(localStorage.getItem('village_member')); }
+    catch { return null; }
+  },
+  logout: () => localStorage.removeItem('village_member'),
+  isLoggedIn: () => !!localStorage.getItem('village_member'),
+
+  // New multi‑member management (admin portal will use these)
+  getAllMembers: () => {
+    try {
+      const members = JSON.parse(localStorage.getItem('village_members')) || [];
+      if (members.length === 0) {
+        const defaultMember = { username: 'BMSR', password: '732306' };
+        localStorage.setItem('village_members', JSON.stringify([defaultMember]));
+        return [defaultMember];
+      }
+      return members;
+    } catch {
+      const defaultMember = { username: 'BMSR', password: '732306' };
+      localStorage.setItem('village_members', JSON.stringify([defaultMember]));
+      return [defaultMember];
+    }
+  },
+  saveAllMembers: (members) => {
+    localStorage.setItem('village_members', JSON.stringify(members));
+  },
+  addMember: (member) => {
+    const members = memberAPI.getAllMembers();
+    members.push(member);
+    memberAPI.saveAllMembers(members);
+  },
+  updateMember: (username, updates) => {
+    const members = memberAPI.getAllMembers().map(m => m.username === username ? { ...m, ...updates } : m);
+    memberAPI.saveAllMembers(members);
+  },
+  deleteMember: (username) => {
+    const members = memberAPI.getAllMembers().filter(m => m.username !== username);
+    memberAPI.saveAllMembers(members);
+  }
+};
+
+// OTP authentication API
+export const otpAuthAPI = {
+  requestOtp: async (phone) => {
+    const res = await api.post('/api/auth/request-otp', { phone });
+    return res.data;
+  },
+  verifyOtp: async (phone, code) => {
+    const res = await api.post('/api/auth/verify-otp', { phone, code });
     return res.data;
   }
 };

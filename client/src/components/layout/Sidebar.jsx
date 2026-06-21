@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Home, Info, BarChart3, Wheat, GraduationCap, Heart,
+  Home, Info, BarChart3, Wheat, GraduationCap, Heart, Star,
   Building2, Shield, AlertTriangle, Bell, Store, Image,
   Globe, Plane, Monitor, Phone, ChevronLeft, ChevronRight,
-  Menu, X, Sparkles, Users, ClipboardList, Lock
+  Menu, X, Sparkles, Users, ClipboardList, Lock, Award, User
 } from 'lucide-react';
 import { authAPI } from '../../data/api';
 import LanguageSwitcher from './LanguageSwitcher';
 import './Sidebar.css';
 
 const navItems = [
+
   { path: '/',              label: 'Home',               icon: Home },
   { path: '/about',         label: 'About Village',       icon: Info },
+  { path: '/highlights',    label: 'Village Highlights',  icon: Award },
   { path: '/census',        label: 'Census Dashboard',    icon: Users },
   { path: '/agriculture',   label: 'Agriculture',         icon: Wheat },
+
   { path: '/education',     label: 'Education',           icon: GraduationCap },
   { path: '/healthcare',    label: 'Healthcare',          icon: Heart },
   { path: '/infrastructure',label: 'Infrastructure',      icon: Building2 },
@@ -27,6 +30,8 @@ const navItems = [
   { path: '/services',      label: 'Digital Services',    icon: Monitor },
   { path: '/insights',      label: 'AI Insights',         icon: Sparkles },
   { path: '/survey',        label: 'Survey & Credits',    icon: ClipboardList },
+  { path: '/user-dashboard',label: 'User Dashboard',      icon: User },
+
   { path: '/contact',       label: 'Contact',             icon: Phone },
 ];
 

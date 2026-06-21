@@ -8,8 +8,10 @@ import {
 import {
   Store, Bell, Image, Shield, AlertTriangle,
   Heart, HandHeart, Plus, Trash2, Edit3,
-  LogOut, User, Loader, CheckCircle, HelpCircle, Users, BarChart3
+  LogOut, LogIn, User, Loader, CheckCircle, HelpCircle, Users, BarChart3, Award, Star
 } from 'lucide-react';
+import VillageStats1 from './VillageStats1';
+import VillageStats2 from './VillageStats2';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -25,8 +27,32 @@ export default function AdminDashboard() {
     projects: [],
     volunteers: [],
     census: [],
-    villagestats: []
+    villagestats: [],
+    svrratings: []
   });
+
+  // State for admin credential form
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPwd, setAdminPwd] = useState('');
+  // Load stored admin credentials when tab is active
+  useEffect(() => {
+    if (activeTab === 'admin_user') {
+      const stored = JSON.parse(localStorage.getItem('adminUserLogin') || '{}');
+      setAdminEmail(stored.email || '');
+      setAdminPwd(stored.password || '');
+    }
+  }, [activeTab]);
+
+  const handleAdminSave = (e) => {
+    e.preventDefault();
+    if (!adminEmail || !adminPwd) {
+      showFeedback('Both email and password are required.', 'danger');
+      return;
+    }
+    const creds = { email: adminEmail, password: adminPwd };
+    localStorage.setItem('adminUserLogin', JSON.stringify(creds));
+    showFeedback('Admin credentials saved successfully!');
+  };
 
   // Modal & form states
   const [showModal, setShowModal] = useState(false);
@@ -78,7 +104,7 @@ export default function AdminDashboard() {
           const res = await schemesAPI.getAll();
           setData(prev => ({ ...prev, schemes: res }));
         } else if (activeTab === 'issues') {
-          const res = await issuesAPI.getAll();
+          const res = await issuesAPI.getAll(true); // include pending
           setData(prev => ({ ...prev, issues: res }));
         } else if (activeTab === 'projects') {
           const res = await nriProjectsAPI.getAll();
@@ -92,6 +118,9 @@ export default function AdminDashboard() {
         } else if (activeTab === 'villagestats') {
           const res = await villageStatsAPI.getAll();
           setData(prev => ({ ...prev, villagestats: res }));
+        } else if (activeTab === 'svrratings') {
+          const res = await villageStatsAPI.getAll();
+          setData(prev => ({ ...prev, svrratings: res.filter(r => r.category === 'scores') }));
         }
       } catch (err) {
         console.error('Fetch error for', activeTab, err);
@@ -118,8 +147,18 @@ export default function AdminDashboard() {
     window.location.reload();
   };
 
-  // Open modal for Create
+  // Helper to determine if the current user has admin privileges
+  const isAdmin = () => {
+    const admin = JSON.parse(localStorage.getItem('adminUserLogin') || '{}');
+    return !!admin.email && !!admin.password;
+  };
+
+  // Open modal for Create (admin only)
   const openAddModal = () => {
+    if (!isAdmin()) {
+      showFeedback('Only admin can add new items.', 'danger');
+      return;
+    }
     setModalMode('add');
     setEditingId(null);
 
@@ -180,6 +219,11 @@ export default function AdminDashboard() {
       defaults.stat_key = '';
       defaults.stat_value = '';
       defaults.sort_order = 0;
+    } else if (activeTab === 'svrratings') {
+      defaults.category = 'scores';
+      defaults.stat_key = '';
+      defaults.stat_value = '';
+      defaults.sort_order = 0;
     }
 
     setFormValues(defaults);
@@ -190,18 +234,22 @@ export default function AdminDashboard() {
 
   // Open modal for Edit
   const openEditModal = (item) => {
-    setModalMode('edit');
-    setEditingId(item.id);
-    setFormValues({ ...item });
-    setImageFile(null);
-    // Show existing image as preview if it's a real URL
-    if (item.image_url && (item.image_url.startsWith('/') || item.image_url.startsWith('http'))) {
-      setImagePreview(item.image_url);
-    } else {
-      setImagePreview(null);
-    }
-    setShowModal(true);
-  };
+  if (!isAdmin()) {
+    showFeedback('Only admin can edit items.', 'danger');
+    return;
+  }
+  setModalMode('edit');
+  setEditingId(item.id);
+  setFormValues({ ...item });
+  setImageFile(null);
+  // Show existing image as preview if it's a real URL
+  if (item.image_url && (item.image_url.startsWith('/') || item.image_url.startsWith('http'))) {
+    setImagePreview(item.image_url);
+  } else {
+    setImagePreview(null);
+  }
+  setShowModal(true);
+};;
 
   // Handle Input Changes
   const handleInputChange = (e) => {
@@ -363,18 +411,16 @@ export default function AdminDashboard() {
           }));
           showFeedback('Volunteer opportunity updated successfully!');
         }
-      } else if (activeTab === 'villagestats') {
+      } else if (activeTab === 'villagestats' || activeTab === 'svrratings') {
         if (modalMode === 'add') {
-          // upsert — creates or updates by category+stat_key
           const newItem = await villageStatsAPI.upsert(formValues);
-          // replace if exists, else prepend
           setData(prev => {
-            const exists = prev.villagestats.find(i => i.id === newItem.id);
+            const exists = prev[activeTab].find(i => i.id === newItem.id);
             return {
               ...prev,
-              villagestats: exists
-                ? prev.villagestats.map(i => i.id === newItem.id ? newItem : i)
-                : [newItem, ...prev.villagestats]
+              [activeTab]: exists
+                ? prev[activeTab].map(i => i.id === newItem.id ? newItem : i)
+                : [newItem, ...prev[activeTab]]
             };
           });
           showFeedback('Village stat saved successfully!');
@@ -382,7 +428,7 @@ export default function AdminDashboard() {
           const updatedItem = await villageStatsAPI.update(editingId, formValues);
           setData(prev => ({
             ...prev,
-            villagestats: prev.villagestats.map(item => item.id === editingId ? updatedItem : item)
+            [activeTab]: prev[activeTab].map(item => item.id === editingId ? updatedItem : item)
           }));
           showFeedback('Village stat updated successfully!');
         }
@@ -398,6 +444,10 @@ export default function AdminDashboard() {
 
   // Delete Item
   const handleDelete = async (id) => {
+    if (!isAdmin()) {
+      showFeedback('Only admin can delete items.', 'danger');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this item?')) return;
 
     try {
@@ -428,6 +478,9 @@ export default function AdminDashboard() {
       } else if (activeTab === 'villagestats') {
         await villageStatsAPI.delete(id);
         setData(prev => ({ ...prev, villagestats: prev.villagestats.filter(item => item.id !== id) }));
+      } else if (activeTab === 'svrratings') {
+        await villageStatsAPI.delete(id);
+        setData(prev => ({ ...prev, svrratings: prev.svrratings.filter(item => item.id !== id) }));
       }
       showFeedback('Item deleted successfully!');
     } catch (err) {
@@ -526,7 +579,9 @@ export default function AdminDashboard() {
             { id: 'projects', label: 'NRI Projects', icon: Heart },
             { id: 'volunteers', label: 'Volunteers', icon: HandHeart },
             { id: 'census', label: 'Census', icon: Users },
-            { id: 'villagestats', label: 'Village Stats', icon: BarChart3 },
+            { id: 'admin_user', label: 'User Login', icon: User },
+            { id: 'villagestats1', label: 'Demographics Stats', icon: BarChart3 },
+            { id: 'villagestats2', label: 'Infrastructure Stats', icon: BarChart3 },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -567,22 +622,76 @@ export default function AdminDashboard() {
 
           <div className="flex-between mb-lg">
             <h3 style={{ textTransform: 'capitalize', fontSize: '1.2rem' }}>
-              Manage {activeTab === 'projects' ? 'NRI Fund Projects' : activeTab === 'volunteers' ? 'Volunteer Roles' : activeTab === 'villagestats' ? 'Village Stats' : activeTab}
+              Manage {activeTab === 'projects' ? 'NRI Fund Projects' : activeTab === 'volunteers' ? 'Volunteer Roles' : activeTab === 'villagestats1' ? 'Demographics Stats' : activeTab === 'villagestats2' ? 'Infrastructure Stats' : activeTab}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={openAddModal} style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
-              <Plus size={16} /> Add New
-            </button>
+            <div className="flex gap-sm">
+              {activeTab === 'issues' && (
+                <button
+                  className="btn btn-outline btn-sm"
+                  style={{ padding: '8px 14px', fontSize: '0.78rem', color: 'var(--warning)' }}
+                  onClick={async () => {
+                    try {
+                      await issuesAPI.recalculate();
+                      const res = await issuesAPI.getAll(true);
+                      setData(prev => ({ ...prev, issues: res }));
+                      showFeedback('Priorities recalculated by domain totals!');
+                    } catch (e) {
+                      showFeedback('Recalculation failed.', 'danger');
+                    }
+                  }}
+                  title="Re-rank all issues by category total reports"
+                >
+                  ↺ Recalculate Priorities
+                </button>
+              )}
+              <button className="btn btn-primary btn-sm" onClick={openAddModal} style={{ padding: '8px 16px', fontSize: '0.8rem' }}>
+                <Plus size={16} /> Add New
+              </button>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="flex-center" style={{ height: '300px' }}>
-              <Loader size={30} className="animate-spin" style={{ color: 'var(--primary)' }} />
+          {activeTab === 'admin_user' ? (
+            <div style={{ padding: 'var(--space-lg)' }}>
+              <h3 style={{ marginBottom: 'var(--space-md)' }}>Set Default User Login</h3>
+              <form onSubmit={handleAdminSave} className="flex-col gap-md">
+                <div className="flex-col gap-sm">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email</label>
+                  <input
+                    type="email"
+                    value={adminEmail}
+                    onChange={e => setAdminEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    required
+                  />
+                </div>
+                <div className="flex-col gap-sm">
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Password</label>
+                  <input
+                    type="text"
+                    value={adminPwd}
+                    onChange={e => setAdminPwd(e.target.value)}
+                    placeholder="password"
+                    required
+                  />
+                </div>
+                <div className="flex" style={{ gap: 'var(--space-md)', justifyContent: 'flex-end', marginTop: 'var(--space-md)' }}>
+                  <button type="submit" className="btn btn-primary">Save Credentials</button>
+                </div>
+              </form>
+            </div>
+          ) : activeTab === 'villagestats1' ? (
+            <div style={{ overflowX: 'auto', padding: '10px' }}>
+              <VillageStats1 />
+            </div>
+          ) : activeTab === 'villagestats2' ? (
+            <div style={{ overflowX: 'auto', padding: '10px' }}>
+              <VillageStats2 />
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              {renderTable()}
-            </div>
-          )}
+          <div style={{ overflowX: 'auto' }}>
+            {renderTable()}
+          </div>
+        )}
 
         </div>
       </div>
@@ -612,7 +721,7 @@ export default function AdminDashboard() {
           }}>
             <h3 style={{ marginBottom: 'var(--space-lg)', textTransform: 'capitalize' }}>
               {modalMode === 'add' ? 'Add' : 'Edit'}{' '}
-              {activeTab === 'villagestats' ? 'Village Stat' : activeTab.slice(0, -1)}
+              {activeTab === 'villagestats' ? 'Stat' : activeTab === 'svrratings' ? 'SVR Rating' : activeTab.slice(0, -1)}
             </h3>
 
             <form onSubmit={handleFormSubmit} className="flex-col gap-md">
@@ -735,6 +844,13 @@ export default function AdminDashboard() {
               <th>Actions</th>
             </tr>
           )}
+          {activeTab === 'svrratings' && (
+            <tr>
+              <th>Metric Name</th>
+              <th>Score Value</th>
+              <th>Actions</th>
+            </tr>
+          )}
         </thead>
         <tbody>
           {list.map(item => (
@@ -795,7 +911,13 @@ export default function AdminDashboard() {
                 <>
                   <td className="font-bold">{item.title}</td>
                   <td>{item.category || 'N/A'}</td>
-                  <td><span className={`badge ${item.status === 'open' ? 'danger' : 'success'}`}>{item.status}</span></td>
+                  <td>
+                    <span className={`badge ${item.status === 'pending' ? 'warning' :
+                      item.status === 'open' ? 'danger' : 'success'
+                      }`}>
+                      {item.status === 'pending' ? '⏳ Pending Review' : item.status}
+                    </span>
+                  </td>
                   <td><strong>Priority #{item.priority}</strong></td>
                 </>
               )}
@@ -827,14 +949,50 @@ export default function AdminDashboard() {
               )}
               {activeTab === 'villagestats' && (
                 <>
-                  <td><span className="badge primary" style={{ textTransform: 'capitalize' }}>{item.category}</span></td>
+                  <td><span className="badge">{item.category}</span></td>
                   <td className="font-bold">{item.stat_key}</td>
-                  <td><strong>{item.stat_value}</strong></td>
+                  <td>{item.stat_value}</td>
+                </>
+              )}
+              {activeTab === 'svrratings' && (
+                <>
+                  <td className="font-bold">{item.stat_key}</td>
+                  <td><span className="badge success" style={{ fontSize: '1rem' }}>{item.stat_value}/100</span></td>
                 </>
               )}
 
               <td>
                 <div className="flex gap-sm">
+                  {activeTab === 'issues' && item.status === 'pending' && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const updated = await issuesAPI.update(item.id, { status: 'open', priority: 5 });
+                          setData(prev => ({
+                            ...prev,
+                            issues: prev.issues.map(i => i.id === item.id ? updated : i)
+                          }));
+                          showFeedback('Issue approved and published!');
+                        } catch (err) {
+                          showFeedback('Failed to approve issue.', 'danger');
+                        }
+                      }}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        background: 'rgba(34,197,94,0.15)',
+                        color: 'var(--success)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600
+                      }}
+                      title="Approve & Publish"
+                    >
+                      ✓ Approve
+                    </button>
+                  )}
                   <button
                     onClick={() => openEditModal(item)}
                     style={{
@@ -848,19 +1006,21 @@ export default function AdminDashboard() {
                   >
                     <Edit3 size={14} />
                   </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    style={{
-                      padding: '6px',
-                      borderRadius: '6px',
-                      background: 'var(--danger-bg)',
-                      color: 'var(--danger)',
-                      display: 'flex'
-                    }}
-                    title="Delete Record"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {isAdmin() && (
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      style={{
+                        padding: '6px',
+                        borderRadius: '6px',
+                        background: 'var(--danger-bg)',
+                        color: 'var(--danger)',
+                        display: 'flex'
+                      }}
+                      title="Delete Record"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
@@ -1507,6 +1667,48 @@ export default function AdminDashboard() {
       );
     }
 
+    if (activeTab === 'svrratings') {
+      return (
+        <>
+          <input type="hidden" name="category" value="scores" />
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Metric Name (Key)</label>
+            <input
+              name="stat_key"
+              value={formValues.stat_key || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. Overall Score"
+              disabled={modalMode === 'edit'}
+            />
+          </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Score (out of 100)</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <input
+                type="number"
+                name="stat_value"
+                value={formValues.stat_value || 0}
+                onChange={handleInputChange}
+                required
+                min="0"
+                max="100"
+                style={{ width: '80px', fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'center' }}
+              />
+              <input
+                type="range"
+                name="stat_value"
+                min="0" max="100"
+                value={formValues.stat_value || 0}
+                onChange={handleInputChange}
+                style={{ flex: 1 }}
+              />
+            </div>
+          </div>
+        </>
+      );
+    }
+
     if (activeTab === 'villagestats') {
       return (
         <>
@@ -1520,11 +1722,11 @@ export default function AdminDashboard() {
             >
               <option value="">-- Select Category --</option>
               {[
-                'overview','demographics','age_groups','social',
-                'education','occupation','housing','water',
-                'agriculture','health','economics','income_buckets',
-                'financial','schemes_coverage','vehicles','appliances',
-                'problems','vulnerability','scores'
+                'overview', 'demographics', 'age_groups', 'social',
+                'education', 'occupation', 'housing', 'water',
+                'agriculture', 'health', 'economics', 'income_buckets',
+                'financial', 'schemes_coverage', 'vehicles', 'appliances',
+                'problems', 'vulnerability', 'scores'
               ].map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}

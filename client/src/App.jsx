@@ -18,8 +18,14 @@ import AIInsights from './pages/AIInsights';
 import Survey from './pages/Survey';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
+
 import AdminDashboard from './pages/AdminDashboard';
+import VillageHighlights from './pages/VillageHighlights';
+import UserDashboard from './pages/UserDashboard';
 import './index.css';
+
+
+
 
 import { useState } from 'react';
 
@@ -47,9 +53,13 @@ function App() {
             <Route path="/nri" element={<NRI />} />
             <Route path="/services" element={<DigitalServices />} />
             <Route path="/insights" element={<AIInsights />} />
+            <Route path="/highlights" element={<VillageHighlights />} />
             <Route path="/survey" element={<Survey />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/user-dashboard" element={<UserDashboard />} />
             <Route path="/login" element={<Login />} />
+
+
             <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </main>

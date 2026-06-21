@@ -1,8 +1,15 @@
 import { MapPin, Landmark, TreePine, CloudRain, Mountain, Users, Sun } from 'lucide-react';
 import villageData from '../data/villageData';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function About() {
   const data = villageData;
+
+  const ageChartData = Object.entries(data.demographics.ageGroups).map(([key, val]) => ({
+    name: key.split(' ')[0],
+    fullName: key,
+    Population: val
+  }));
 
   return (
     <div className="page-container">
@@ -111,6 +118,25 @@ export default function About() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="card">
+              <h4 style={{ marginBottom: 'var(--space-md)' }}>Age Distribution</h4>
+              <div style={{ height: '250px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={ageChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
+                    <Tooltip 
+                      cursor={{ fill: 'var(--bg-surface)' }}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-panel)' }}
+                      labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
+                    />
+                    <Bar dataKey="Population" fill="var(--primary-light)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 

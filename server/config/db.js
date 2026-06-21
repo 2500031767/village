@@ -29,6 +29,7 @@ export function initializeDatabase() {
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       role TEXT DEFAULT 'admin',
+      phone TEXT UNIQUE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -195,6 +196,32 @@ export function initializeDatabase() {
       image_url TEXT NOT NULL,
       description TEXT,
       uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Village members (for user login)
+    CREATE TABLE IF NOT EXISTS otp_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at DATETIME NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS village_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT UNIQUE NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Village ratings (by visitors/members)
+    CREATE TABLE IF NOT EXISTS village_ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+      comment TEXT,
+      reviewer_name TEXT,
+      reviewer_type TEXT DEFAULT 'visitor',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     -- NRI Funding Projects

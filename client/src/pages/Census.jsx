@@ -157,6 +157,14 @@ export default function Census() {
     { name: 'Prosperous', value: num(vuln['Prosperous (0-14)']),   color: '#22C55E' },
   ];
 
+  // ── New Bar Chart Data Arrays ──
+  const waterData = Object.entries(water).map(([name, value]) => ({ name, value: num(value) })).sort((a,b) => b.value - a.value);
+  const schemesData = Object.entries(schemes).map(([name, value]) => ({ name, value: num(value) })).sort((a,b) => b.value - a.value);
+  const incomeData = Object.entries(income).map(([name, value]) => ({ name, value: num(value) })); // Preserve logical order
+  const financialData = Object.entries(financial).filter(([k]) => !['No Bank Account %'].includes(k)).map(([name, value]) => ({ name, value: num(value) })).sort((a,b) => b.value - a.value);
+  const vehiclesData = Object.entries(vehicles).map(([name, value]) => ({ name, value: num(value) })).sort((a,b) => b.value - a.value);
+  const appliancesData = Object.entries(appliances).map(([name, value]) => ({ name, value: num(value) })).sort((a,b) => b.value - a.value);
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -358,7 +366,15 @@ export default function Census() {
           </div>
           <div className="card">
             <div className="chart-card-title">Water Access</div>
-            <KVTable data={water} />
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={waterData} layout="vertical" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <XAxis type="number" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" tick={{ fill: '#94A3B8', fontSize: 10 }} width={120} />
+                <Tooltip {...tooltipStyle} />
+                <Bar dataKey="value" fill="#3B82F6" radius={[0,6,6,0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -398,7 +414,15 @@ export default function Census() {
           </div>
           <div className="card">
             <div className="chart-card-title">Government Schemes Coverage</div>
-            <KVTable data={schemes} />
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={schemesData} layout="vertical" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <XAxis type="number" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" tick={{ fill: '#94A3B8', fontSize: 10 }} width={120} />
+                <Tooltip {...tooltipStyle} />
+                <Bar dataKey="value" fill="#F59E0B" radius={[0,6,6,0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -411,13 +435,31 @@ export default function Census() {
             <div className="chart-card-title">Economics</div>
             <KVTable data={econ} />
             <h4 style={{ marginTop:'16px', marginBottom:'10px', fontSize:'0.88rem' }}>Income Distribution</h4>
-            <KVTable data={income} />
+            <div style={{ height: '220px', width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={incomeData} layout="vertical" margin={{ left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                  <XAxis type="number" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                  <YAxis dataKey="name" type="category" tick={{ fill: '#94A3B8', fontSize: 10 }} width={100} />
+                  <Tooltip {...tooltipStyle} />
+                  <Bar dataKey="value" fill="#10B981" radius={[0,6,6,0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
           <div className="card">
             <div className="chart-card-title">Financial Inclusion</div>
             <ProgressBar label="No Bank Account %" value={financial['No Bank Account %'] || 0} color="#EF4444" />
-            <div style={{ marginTop:'12px' }}>
-              <KVTable data={financial} exclude={['No Bank Account %']} />
+            <div style={{ marginTop:'12px', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={financialData} layout="vertical" margin={{ left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                  <XAxis type="number" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                  <YAxis dataKey="name" type="category" tick={{ fill: '#94A3B8', fontSize: 10 }} width={110} />
+                  <Tooltip {...tooltipStyle} />
+                  <Bar dataKey="value" fill="#8B5CF6" radius={[0,6,6,0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
@@ -475,11 +517,27 @@ export default function Census() {
         <div className="grid-2">
           <div className="card">
             <div className="chart-card-title">Vehicles</div>
-            <KVTable data={vehicles} />
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={vehiclesData} layout="vertical" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <XAxis type="number" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" tick={{ fill: '#94A3B8', fontSize: 10 }} width={110} />
+                <Tooltip {...tooltipStyle} />
+                <Bar dataKey="value" fill="#6366F1" radius={[0,6,6,0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
           <div className="card">
             <div className="chart-card-title">Household Appliances</div>
-            <KVTable data={appliances} />
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={appliancesData} layout="vertical" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <XAxis type="number" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" tick={{ fill: '#94A3B8', fontSize: 10 }} width={110} />
+                <Tooltip {...tooltipStyle} />
+                <Bar dataKey="value" fill="#EC4899" radius={[0,6,6,0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
