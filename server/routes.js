@@ -63,6 +63,12 @@ function multerUpload(req, res, next) {
 
 const router = express.Router();
 
+// ─── HEALTH CHECK ───
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is healthy' });
+});
+
+
 // ─── IMAGE UPLOAD ENDPOINT ───
 router.post('/upload', authenticateToken, multerUpload, (req, res, next) => {
   try {
