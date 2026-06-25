@@ -4,7 +4,7 @@ import {
   Home, Info, BarChart3, Wheat, GraduationCap, Heart, Star,
   Building2, Shield, AlertTriangle, Bell, Store, Image,
   Globe, Plane, Monitor, Phone, ChevronLeft, ChevronRight,
-  Menu, X, Sparkles, Users, ClipboardList, Lock, Award, User
+  Menu, X, Sparkles, Users, ClipboardList, Lock, Award, User, Trophy
 } from 'lucide-react';
 import { authAPI } from '../../data/api';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -15,6 +15,7 @@ const navItems = [
   { path: '/',              label: 'Home',               icon: Home },
   { path: '/about',         label: 'About Village',       icon: Info },
   { path: '/highlights',    label: 'Village Highlights',  icon: Award },
+  { path: '/awards',        label: 'Awards & Goals',      icon: Trophy },
   { path: '/census',        label: 'Census Dashboard',    icon: Users },
   { path: '/agriculture',   label: 'Agriculture',         icon: Wheat },
 

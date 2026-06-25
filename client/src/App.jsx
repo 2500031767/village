@@ -22,6 +22,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import VillageHighlights from './pages/VillageHighlights';
 import UserDashboard from './pages/UserDashboard';
+import Awards from './pages/Awards';
 import './index.css';
 
 
@@ -54,6 +55,7 @@ function App() {
             <Route path="/services" element={<DigitalServices />} />
             <Route path="/insights" element={<AIInsights />} />
             <Route path="/highlights" element={<VillageHighlights />} />
+            <Route path="/awards" element={<Awards />} />
             <Route path="/survey" element={<Survey />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/user-dashboard" element={<UserDashboard />} />

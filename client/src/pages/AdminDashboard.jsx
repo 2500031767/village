@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   authAPI, businessesAPI, notificationsAPI,
   galleryAPI, schemesAPI, issuesAPI,
-  nriProjectsAPI, volunteerAPI, censusAPI, villageStatsAPI
+  nriProjectsAPI, volunteerAPI, censusAPI, villageStatsAPI, awardsAPI
 } from '../data/api';
 import {
   Store, Bell, Image, Shield, AlertTriangle,
@@ -28,7 +28,8 @@ export default function AdminDashboard() {
     volunteers: [],
     census: [],
     villagestats: [],
-    svrratings: []
+    svrratings: [],
+    awards: []
   });
 
   // State for admin credential form
@@ -121,6 +122,9 @@ export default function AdminDashboard() {
         } else if (activeTab === 'svrratings') {
           const res = await villageStatsAPI.getAll();
           setData(prev => ({ ...prev, svrratings: res.filter(r => r.category === 'scores') }));
+        } else if (activeTab === 'awards') {
+          const res = await awardsAPI.getAll();
+          setData(prev => ({ ...prev, awards: res }));
         }
       } catch (err) {
         console.error('Fetch error for', activeTab, err);
@@ -224,6 +228,13 @@ export default function AdminDashboard() {
       defaults.stat_key = '';
       defaults.stat_value = '';
       defaults.sort_order = 0;
+    } else if (activeTab === 'awards') {
+      defaults.title = '';
+      defaults.category = 'sdg';
+      defaults.description = '';
+      defaults.year = new Date().getFullYear().toString();
+      defaults.icon_name = 'Award';
+      defaults.color = '#3b82f6';
     }
 
     setFormValues(defaults);
@@ -423,14 +434,27 @@ export default function AdminDashboard() {
                 : [newItem, ...prev[activeTab]]
             };
           });
-          showFeedback('Village stat saved successfully!');
+          showFeedback(activeTab === 'svrratings' ? 'SVR rating saved successfully!' : 'Village stat saved successfully!');
         } else {
           const updatedItem = await villageStatsAPI.update(editingId, formValues);
           setData(prev => ({
             ...prev,
             [activeTab]: prev[activeTab].map(item => item.id === editingId ? updatedItem : item)
           }));
-          showFeedback('Village stat updated successfully!');
+          showFeedback(activeTab === 'svrratings' ? 'SVR rating updated successfully!' : 'Village stat updated successfully!');
+        }
+      } else if (activeTab === 'awards') {
+        if (modalMode === 'add') {
+          const newItem = await awardsAPI.create(formValues);
+          setData(prev => ({ ...prev, awards: [newItem, ...prev.awards] }));
+          showFeedback('Award created successfully!');
+        } else {
+          const updatedItem = await awardsAPI.update(editingId, formValues);
+          setData(prev => ({
+            ...prev,
+            awards: prev.awards.map(item => item.id === editingId ? updatedItem : item)
+          }));
+          showFeedback('Award updated successfully!');
         }
       }
       setShowModal(false);
@@ -481,6 +505,9 @@ export default function AdminDashboard() {
       } else if (activeTab === 'svrratings') {
         await villageStatsAPI.delete(id);
         setData(prev => ({ ...prev, svrratings: prev.svrratings.filter(item => item.id !== id) }));
+      } else if (activeTab === 'awards') {
+        await awardsAPI.delete(id);
+        setData(prev => ({ ...prev, awards: prev.awards.filter(item => item.id !== id) }));
       }
       showFeedback('Item deleted successfully!');
     } catch (err) {
@@ -582,6 +609,8 @@ export default function AdminDashboard() {
             { id: 'admin_user', label: 'User Login', icon: User },
             { id: 'villagestats1', label: 'Demographics Stats', icon: BarChart3 },
             { id: 'villagestats2', label: 'Infrastructure Stats', icon: BarChart3 },
+            { id: 'awards', label: 'Awards & Goals', icon: Award },
+            { id: 'svrratings', label: 'SVR Ratings', icon: Star },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -836,6 +865,14 @@ export default function AdminDashboard() {
               <th>Actions</th>
             </tr>
           )}
+          {activeTab === 'awards' && (
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Year</th>
+              <th>Actions</th>
+            </tr>
+          )}
           {activeTab === 'villagestats' && (
             <tr>
               <th>Category</th>
@@ -945,6 +982,13 @@ export default function AdminDashboard() {
                   <td>{item.femalePopulation}</td>
                   <td>{item.childPopulation}</td>
                   <td>{item.seniorPopulation}</td>
+                </>
+              )}
+              {activeTab === 'awards' && (
+                <>
+                  <td className="font-bold">{item.title}</td>
+                  <td><span className={`badge ${item.category === 'sdg' ? 'success' : 'primary'}`}>{item.category.toUpperCase()}</span></td>
+                  <td>{item.year || 'N/A'}</td>
                 </>
               )}
               {activeTab === 'villagestats' && (
@@ -1773,6 +1817,67 @@ export default function AdminDashboard() {
             <p className="text-xs text-muted" style={{ marginTop: '2px' }}>
               Lower numbers appear first within the same category
             </p>
+          </div>
+        </>
+      );
+    }
+
+    if (activeTab === 'awards') {
+      return (
+        <>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Title</label>
+            <input
+              name="title"
+              value={formValues.title || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g. Clean Water and Sanitation"
+            />
+          </div>
+          <div className="grid-2">
+            <div className="flex-col gap-sm">
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Category</label>
+              <select name="category" value={formValues.category || 'sdg'} onChange={handleInputChange}>
+                <option value="sdg">Sustainable Development Goal (SDG)</option>
+                <option value="hldg">Human Life Development Goal (HLDG)</option>
+              </select>
+            </div>
+            <div className="flex-col gap-sm">
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Year</label>
+              <input
+                name="year"
+                type="number"
+                value={formValues.year || ''}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g. 2023"
+              />
+            </div>
+          </div>
+            <div className="flex-col gap-sm">
+              <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Icon Name</label>
+              <select name="icon_name" value={formValues.icon_name || 'Award'} onChange={handleInputChange}>
+                <option value="Trophy">Trophy 🏆</option>
+                <option value="Medal">Medal 🥇</option>
+                <option value="Award">Award 🏅</option>
+                <option value="Star">Star ⭐</option>
+                <option value="Crown">Crown 👑</option>
+                <option value="BadgeCheck">Badge ✔️</option>
+              </select>
+              <p className="text-xs text-muted" style={{ marginTop: '2px' }}>
+                Select a standard icon to represent this goal
+              </p>
+            </div>
+          <div className="flex-col gap-sm">
+            <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Description</label>
+            <textarea
+              name="description"
+              value={formValues.description || ''}
+              onChange={handleInputChange}
+              rows={3}
+              placeholder="Detailed description of the award/goal..."
+            />
           </div>
         </>
       );

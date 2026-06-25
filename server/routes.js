@@ -270,6 +270,85 @@ router.delete('/businesses/:id', authenticateToken, (req, res, next) => {
 });
 
 
+// ─── AWARDS ENDPOINTS ───
+
+// Get all awards
+router.get('/awards', (req, res, next) => {
+  try {
+    const rows = db.prepare('SELECT * FROM awards ORDER BY id DESC').all();
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Create award
+router.post('/awards', authenticateToken, (req, res, next) => {
+  try {
+    const { title, category, description, year, icon_name, color } = req.body;
+    if (!title || !category) {
+      return res.status(400).json({ error: 'Title and category are required' });
+    }
+    const stmt = db.prepare(
+      'INSERT INTO awards (title, category, description, year, icon_name, color) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    const result = stmt.run(title, category, description || null, year || null, icon_name || null, color || null);
+    const newRow = db.prepare('SELECT * FROM awards WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(newRow);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Update award
+router.put('/awards/:id', authenticateToken, (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, category, description, year, icon_name, color } = req.body;
+    
+    const award = db.prepare('SELECT * FROM awards WHERE id = ?').get(id);
+    if (!award) {
+      return res.status(404).json({ error: 'Award not found' });
+    }
+
+    const stmt = db.prepare(`
+      UPDATE awards 
+      SET title = ?, category = ?, description = ?, year = ?, icon_name = ?, color = ?
+      WHERE id = ?
+    `);
+    stmt.run(
+      title !== undefined ? title : award.title,
+      category !== undefined ? category : award.category,
+      description !== undefined ? description : award.description,
+      year !== undefined ? year : award.year,
+      icon_name !== undefined ? icon_name : award.icon_name,
+      color !== undefined ? color : award.color,
+      id
+    );
+
+    const updatedRow = db.prepare('SELECT * FROM awards WHERE id = ?').get(id);
+    res.json(updatedRow);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete award
+router.delete('/awards/:id', authenticateToken, (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const stmt = db.prepare('DELETE FROM awards WHERE id = ?');
+    const result = stmt.run(id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Award not found' });
+    }
+    res.json({ message: 'Award deleted successfully', id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
 // ─── NOTIFICATIONS ENDPOINTS ───
 
 // Get all notifications

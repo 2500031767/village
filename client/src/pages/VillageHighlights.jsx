@@ -159,7 +159,7 @@ export default function VillageHighlights() {
                 Community Viewer Rating
               </h2>
               <div style={{ fontSize: '5rem', fontWeight: 900, color: '#F59E0B', lineHeight: 1 }}>
-                {viewerRating.average.toFixed(1)}
+                {Number(viewerRating.average).toFixed(1)}
                 <span style={{ fontSize: '2rem', color: 'var(--text-muted)' }}>/5.0</span>
               </div>
               <div style={{ margin: '12px 0 6px', display: 'flex', justifyContent: 'center', gap: '4px' }}>

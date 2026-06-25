@@ -254,6 +254,25 @@ export const villageStatsAPI = {
   }
 };
 
+export const awardsAPI = {
+  getAll: async () => {
+    const res = await api.get('/api/awards');
+    return res.data;
+  },
+  create: async (data) => {
+    const res = await api.post('/api/awards', data);
+    return res.data;
+  },
+  update: async (id, data) => {
+    const res = await api.put(`/api/awards/${id}`, data);
+    return res.data;
+  },
+  delete: async (id) => {
+    const res = await api.delete(`/api/awards/${id}`);
+    return res.data;
+  }
+};
+
 export const ratingsAPI = {
   getAll: async () => {
     const res = await api.get('/api/ratings');

@@ -288,6 +288,18 @@ export function initializeDatabase() {
       longitude REAL,
       description TEXT
     );
+
+    -- Awards and Recognitions
+    CREATE TABLE IF NOT EXISTS awards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL,
+      description TEXT,
+      year TEXT,
+      icon_name TEXT,
+      color TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   console.log('Database initialized successfully');
