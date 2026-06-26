@@ -4,36 +4,58 @@ import {
   Home, Info, BarChart3, Wheat, GraduationCap, Heart, Star,
   Building2, Shield, AlertTriangle, Bell, Store, Image,
   Globe, Plane, Monitor, Phone, ChevronLeft, ChevronRight,
-  Menu, X, Sparkles, Users, ClipboardList, Lock, Award, User, Trophy
+  Menu, X, Sparkles, Users, ClipboardList, Lock, Award, User, Trophy, Camera
 } from 'lucide-react';
 import { authAPI } from '../../data/api';
 import LanguageSwitcher from './LanguageSwitcher';
 import './Sidebar.css';
 
-const navItems = [
-
-  { path: '/',              label: 'Home',               icon: Home },
-  { path: '/about',         label: 'About Village',       icon: Info },
-  { path: '/highlights',    label: 'Village Highlights',  icon: Award },
-  { path: '/awards',        label: 'Awards & Goals',      icon: Trophy },
-  { path: '/census',        label: 'Census Dashboard',    icon: Users },
-  { path: '/agriculture',   label: 'Agriculture',         icon: Wheat },
-
-  { path: '/education',     label: 'Education',           icon: GraduationCap },
-  { path: '/healthcare',    label: 'Healthcare',          icon: Heart },
-  { path: '/infrastructure',label: 'Infrastructure',      icon: Building2 },
-  { path: '/schemes',       label: 'Govt. Schemes',       icon: Shield },
-  { path: '/issues',        label: 'Village Issues',      icon: AlertTriangle },
-  { path: '/notifications', label: 'Notifications',       icon: Bell },
-  { path: '/businesses',    label: 'Business Directory',  icon: Store },
-  { path: '/gallery',       label: 'Gallery',             icon: Image },
-  { path: '/nri',           label: 'NRI & Migrants',      icon: Plane },
-  { path: '/services',      label: 'Digital Services',    icon: Monitor },
-  { path: '/insights',      label: 'AI Insights',         icon: Sparkles },
-  { path: '/survey',        label: 'Survey & Credits',    icon: ClipboardList },
-  { path: '/user-dashboard',label: 'User Dashboard',      icon: User },
-
-  { path: '/contact',       label: 'Contact',             icon: Phone },
+const navGroups = [
+  {
+    title: 'Discover Seetharampuram',
+    items: [
+      { path: '/',              label: 'Home',               icon: Home },
+      { path: '/about',         label: 'About Village',       icon: Info },
+      { path: '/gallery',       label: 'Gallery & Media',     icon: Camera },
+      { path: '/contact',       label: 'Contact Us',          icon: Phone },
+    ]
+  },
+  {
+    title: 'Community Life',
+    items: [
+      { path: '/agriculture',   label: 'Agriculture',         icon: Wheat },
+      { path: '/education',     label: 'Education',           icon: GraduationCap },
+      { path: '/healthcare',    label: 'Healthcare',          icon: Heart },
+      { path: '/businesses',    label: 'Local Businesses',    icon: Store },
+    ]
+  },
+  {
+    title: 'Development & Data',
+    items: [
+      { path: '/infrastructure',label: 'Infrastructure',      icon: Building2 },
+      { path: '/census',        label: 'Census Data',         icon: Users },
+      { path: '/schemes',       label: 'Govt. Schemes',       icon: Shield },
+      { path: '/issues',        label: 'Village Issues',      icon: AlertTriangle },
+      { path: '/highlights',    label: 'Village Highlights',  icon: Award },
+      { path: '/awards',        label: 'Awards & Goals',      icon: Trophy },
+    ]
+  },
+  {
+    title: 'Services & Research',
+    items: [
+      { path: '/services',      label: 'Digital Services',    icon: Monitor },
+      { path: '/nri',           label: 'NRI Connect',         icon: Plane },
+      { path: '/insights',      label: 'AI Insights',         icon: Sparkles },
+      { path: '/survey',        label: 'Survey Data',         icon: ClipboardList },
+    ]
+  },
+  {
+    title: 'Personal',
+    items: [
+      { path: '/notifications', label: 'Notifications',       icon: Bell },
+      { path: '/user-dashboard',label: 'User Dashboard',      icon: User },
+    ]
+  }
 ];
 
 export default function Sidebar({ collapsed, setCollapsed }) {
@@ -70,7 +92,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
             {!collapsed && (
               <div className="logo-text">
                 <span className="logo-title">Seetharampuram</span>
-                <span className="logo-subtitle">Digital Village</span>
+                <span className="logo-subtitle">Village Portal</span>
               </div>
             )}
           </div>
@@ -83,17 +105,24 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         <LanguageSwitcher collapsed={collapsed} />
 
         <nav className="sidebar-nav" style={{ paddingBottom: 'var(--space-md)' }}>
-          {navItems.map(({ path, label, icon: Icon }) => (
-            <NavLink
-              key={path}
-              to={path}
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              title={collapsed ? label : undefined}
-            >
-              <Icon size={20} />
-              {!collapsed && <span>{label}</span>}
-              {collapsed && <span className="sidebar-tooltip">{label}</span>}
-            </NavLink>
+          {navGroups.map((group, groupIdx) => (
+            <div key={groupIdx} className="sidebar-group">
+              {!collapsed && <div className="sidebar-group-title" style={{ padding: '12px 16px 4px', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600 }}>{group.title}</div>}
+              {collapsed && groupIdx > 0 && <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 'var(--space-sm) 0' }} />}
+              
+              {group.items.map(({ path, label, icon: Icon }) => (
+                <NavLink
+                  key={path}
+                  to={path}
+                  className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                  title={collapsed ? label : undefined}
+                >
+                  <Icon size={20} />
+                  {!collapsed && <span>{label}</span>}
+                  {collapsed && <span className="sidebar-tooltip">{label}</span>}
+                </NavLink>
+              ))}
+            </div>
           ))}
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 'var(--space-sm) 0' }} />

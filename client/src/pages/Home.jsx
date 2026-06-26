@@ -3,26 +3,12 @@ import {
   Users, Home as HomeIcon, MapPin, Wheat, GraduationCap,
   Zap, Flame, Heart, Building2, TrendingUp, BarChart3,
   ArrowRight, Sparkles, Shield, AlertTriangle, TreePine, Image,
-  Star, MessageSquare, CheckCircle, Send
+  Star, MessageSquare, CheckCircle, Send, PlayCircle, Landmark
 } from 'lucide-react';
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip
-} from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import villageData from '../data/villageData';
-import { galleryAPI, villageStatsAPI, ratingsAPI, issuesAPI, otpAuthAPI } from '../data/api';
+import { galleryAPI, ratingsAPI } from '../data/api';
 import './Home.css';
-
-const ISSUE_CATEGORIES = [
-  'Water Supply',
-  'Electricity',
-  'Roads & Infrastructure',
-  'Sanitation & Waste',
-  'Health & Medical',
-  'Education',
-  'Agriculture',
-  'Other'
-];
 
 // Animated counter hook
 function useCounter(end, duration = 2000) {
@@ -57,38 +43,6 @@ function useCounter(end, duration = 2000) {
   return [count, ref];
 }
 
-function ScoreGauge({ score, label, color = 'var(--primary-light)', size = 90 }) {
-  const radius = (size - 12) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const [animated, setAnimated] = useState(false);
-
-  useEffect(() => {
-    setTimeout(() => setAnimated(true), 300);
-  }, []);
-
-  const offset = circumference - (animated ? (score / 100) * circumference : 0);
-  const scoreColor = score >= 80 ? 'var(--success)' : score >= 60 ? 'var(--primary-light)' : score >= 40 ? 'var(--warning)' : 'var(--danger)';
-
-  return (
-    <div className="score-gauge">
-      <div className="score-gauge-circle" style={{ width: size, height: size }}>
-        <svg width={size} height={size}>
-          <circle className="gauge-bg" cx={size / 2} cy={size / 2} r={radius} />
-          <circle
-            className="gauge-fill"
-            cx={size / 2} cy={size / 2} r={radius}
-            stroke={color || scoreColor}
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-          />
-        </svg>
-        <span className="score-gauge-value" style={{ color: color || scoreColor }}>{score}%</span>
-      </div>
-      <span className="score-gauge-label">{label}</span>
-    </div>
-  );
-}
-
 function StatCard({ icon: Icon, label, value, desc, color = 'teal', delay = 0 }) {
   return (
     <div className="stat-card animate-fadeInUp" style={{ animationDelay: `${delay}ms` }}>
@@ -105,13 +59,14 @@ function StatCard({ icon: Icon, label, value, desc, color = 'teal', delay = 0 })
 }
 
 const heroImages = [
-  '/images/village_drone_view.png',
-  '/images/village_community.png',
-  '/images/village_temple.png',
-  '/images/village_school.png',
-  '/images/village_market.png',
-  '/images/paddy_field.png',
-  '/images/cotton_field.png',
+  '/images/sunset_1.webp',
+  '/images/dance_1.webp',
+  '/images/community_meeting_1.webp',
+  '/images/agriculture_1.webp',
+  '/images/school_1.webp',
+  '/images/tractor_1.webp',
+  '/images/traditional_dress.webp',
+  '/images/buffalo_1.webp',
 ];
 
 export default function Home() {
@@ -119,11 +74,6 @@ export default function Home() {
   const navigate = useNavigate();
   const [currentBg, setCurrentBg] = useState(0);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
-
-  // Rating system state
-  const [recentIssues, setRecentIssues] = useState([]);
-  const [liveScores, setLiveScores] = useState({});
-  // Member login state
 
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
@@ -140,34 +90,14 @@ export default function Home() {
   useEffect(() => {
     galleryAPI.getAll()
       .then(photos => {
-        // Only show photos with real uploaded images (not emojis)
         const real = photos.filter(p => p.image_url && (p.image_url.startsWith('/') || p.image_url.startsWith('http')));
         setGalleryPhotos(real.slice(0, 6));
       })
       .catch(() => { });
   }, []);
 
-  // Fetch recent approved issues for home feed
-  useEffect(() => {
-    issuesAPI.getAll()
-      .then(issues => setRecentIssues(issues.slice(0, 5)))
-      .catch(() => { });
-  }, []);
-
-  // Fetch live SVR scores from DB
-  useEffect(() => {
-    villageStatsAPI.getAll()
-      .then(rows => {
-        const map = {};
-        rows.filter(r => r.category === 'scores').forEach(r => { map[r.stat_key] = Number(r.stat_value); });
-        setLiveScores(map);
-      })
-      .catch(() => { });
-  }, []);
-
-// OTP login handlers removed
-
   const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '', reviewer_name: '', reviewer_type: 'visitor' });
+  
   const handleRatingChange = (e) => {
     const { name, value } = e.target;
     setRatingForm(prev => ({ ...prev, [name]: value }));
@@ -192,15 +122,9 @@ export default function Home() {
       setRatingSubmitting(false);
     }
   };
+
   const [popCount, popRef] = useCounter(data.overview.totalPopulation);
   const [hhCount, hhRef] = useCounter(data.overview.totalHouseholds);
-
-  const vulnData = [
-    { name: 'High Risk', value: data.vulnerability.segmentation['High Risk (60-100)'], color: '#EF4444' },
-    { name: 'Vulnerable', value: data.vulnerability.segmentation['Vulnerable (35-59)'], color: '#F59E0B' },
-    { name: 'Stable', value: data.vulnerability.segmentation['Stable (15-34)'], color: '#3B82F6' },
-    { name: 'Prosperous', value: data.vulnerability.segmentation['Prosperous (0-14)'], color: '#22C55E' },
-  ];
 
   return (
     <div className="home-page">
@@ -234,16 +158,17 @@ export default function Home() {
         <div className="hero-content">
           <div className="hero-badge animate-fadeInUp">
             <TreePine size={14} />
-            <span>Digital Village Initiative</span>
+            <span>Discover the Heart of Andhra Pradesh</span>
           </div>
 
           <h1 className="hero-title animate-fadeInUp stagger-1">
+            <span style={{ fontSize: '1.2rem', display: 'block', fontWeight: 400, color: '#e2e8f0', marginBottom: '10px' }}>Welcome to</span>
             <span className="village-name">Seetharampuram</span>
             <span className="village-thanda">Thanda</span>
           </h1>
 
-          <p className="hero-subtitle animate-fadeInUp stagger-2">
-            A comprehensive digital platform showcasing the life, data, and development of our village
+          <p className="hero-subtitle animate-fadeInUp stagger-2" style={{ maxWidth: '700px', fontSize: '1.15rem' }}>
+            A vibrant Lambadi community with over 80 years of rich heritage, culture, and enduring spirit. Whether you are a tourist, researcher, or NGO partner, we welcome you to explore our story.
           </p>
 
           <div className="hero-meta animate-fadeInUp stagger-3">
@@ -260,7 +185,7 @@ export default function Home() {
                 border: '1px solid rgba(255,255,255,0.15)',
                 letterSpacing: '0.02em'
               }}>
-                Mylavaram Mandal, NTR District, Andhra Pradesh
+                Mylavaram Mandal, NTR District, AP (50 km from Vijayawada)
               </span>
             </div>
           </div>
@@ -268,195 +193,66 @@ export default function Home() {
           <div className="hero-stats animate-fadeInUp stagger-4">
             <div className="hero-stat" ref={popRef}>
               <span className="hero-stat-value">{popCount}</span>
-              <span className="hero-stat-label">Population</span>
+              <span className="hero-stat-label">Residents</span>
             </div>
             <div className="hero-stat-divider" />
             <div className="hero-stat" ref={hhRef}>
               <span className="hero-stat-value">{hhCount}</span>
-              <span className="hero-stat-label">Households Surveyed</span>
+              <span className="hero-stat-label">Families</span>
             </div>
             <div className="hero-stat-divider" />
             <div className="hero-stat">
-              <span className="hero-stat-value">{data.overview.averageFamilySize}</span>
-              <span className="hero-stat-label">Avg. Family Size</span>
-            </div>
-            <div className="hero-stat-divider" />
-            <div className="hero-stat">
-              <span className="hero-stat-value">84.6%</span>
-              <span className="hero-stat-label">ST Population</span>
+              <span className="hero-stat-value">80+</span>
+              <span className="hero-stat-label">Years of History</span>
             </div>
           </div>
         </div>
       </section>
 
       <section className="page-container">
-        <div className="section">
-          <h2 className="section-title">
-            <BarChart3 size={22} className="icon" />
-            Quick Statistics
-          </h2>
-          <div className="grid-4">
-            <StatCard icon={HomeIcon} label="Households" value={data.overview.totalHouseholds} desc="Surveyed families" color="teal" delay={0} />
-            <StatCard icon={Users} label="Population" value={data.overview.totalPopulation} desc={`${data.demographics.genderDistribution.Male} Male, ${data.demographics.genderDistribution.Female} Female`} color="indigo" delay={100} />
-            <StatCard icon={GraduationCap} label="Literacy Rate" value={`${data.education.adultLiteracyRate}%`} desc={`${data.education.enrolledCount} students enrolled`} color="amber" delay={200} />
-            <StatCard icon={Wheat} label="Farmers" value={data.occupation.distribution.Farmer} desc={`${data.agriculture.dependencyPercentage}% agriculture dependent`} color="green" delay={300} />
-            <StatCard icon={Zap} label="Electricity" value={`${data.housing.electricity.percentage}%`} desc={`${data.housing.electricity.avgHours}hrs avg availability`} color="amber" delay={400} />
-            <StatCard icon={Flame} label="LPG Usage" value={`${data.housing.lpgPercentage}%`} desc="Clean cooking fuel adoption" color="red" delay={500} />
-            <StatCard icon={Building2} label="Pucca Houses" value="86%" desc={`${data.housing.types['Pucca (Concrete)']} concrete houses`} color="blue" delay={600} />
-            <StatCard icon={Heart} label="Under Treatment" value={`${data.health.underTreatmentPercentage}%`} desc={`${data.health.membersWithIssues} members with health issues`} color="red" delay={700} />
-          </div>
-        </div>
-
-        {/* ═══ VILLAGE DEVELOPMENT INDEX ═══ */}
-        <div className="section">
-          <h2 className="section-title">
-            <TrendingUp size={22} className="icon" />
-            Village Development Index
-          </h2>
-
-          <div className="development-grid">
-            <div className="card overall-score-card">
-              <div className="overall-score-inner">
-                <ScoreGauge score={liveScores['Overall Score'] || data.swotAnalysis.scores.overall} label="Overall Score" size={140} color="var(--primary-light)" />
-                <div className="overall-score-text">
-                  <h3>Village Development Score</h3>
-                  <p>Based on SVR Green Village Rating System by KLEF. Covering education, infrastructure, agriculture, health, water access, and financial inclusion indicators.</p>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                    <span className="badge primary">KLEF • UBA Survey Data</span>
-                    <button
-                      className="btn btn-outline"
-                      onClick={() => navigate('/highlights')}
-                      style={{ fontSize: '0.75rem', padding: '3px 12px' }}
-                    >
-                      View Full Highlights →
-                    </button>
-                  </div>
-                </div>
-              </div>
+        
+        {/* ═══ CULTURE & HERITAGE (NEW) ═══ */}
+        <div className="section" style={{ marginTop: 'var(--space-xl)' }}>
+          <div className="grid-2" style={{ alignItems: 'center' }}>
+            <div className="card" style={{ padding: '0', overflow: 'hidden', borderRadius: 'var(--radius-lg)', position: 'relative', height: '350px' }}>
+               {/* This is the placeholder for the video */}
+               <img src="/images/dance_1.webp" alt="Lambadi Traditional Dance" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+               <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <div style={{ textAlign: 'center', cursor: 'pointer' }}>
+                   <PlayCircle size={64} color="#fff" strokeWidth={1.5} style={{ opacity: 0.9 }} />
+                   <p style={{ color: '#fff', fontWeight: 600, marginTop: '8px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>Watch Traditional Dance</p>
+                 </div>
+               </div>
             </div>
-
-            <div className="card scores-grid">
-              <div className="scores-items">
-                <ScoreGauge score={liveScores['Agriculture'] || data.swotAnalysis.scores.agriculture} label="Agriculture" color="#22C55E" />
-                <ScoreGauge score={liveScores['Infrastructure'] || data.swotAnalysis.scores.infrastructure} label="Infrastructure" color="#3B82F6" />
-                <ScoreGauge score={liveScores['Water Access'] || data.swotAnalysis.scores.waterAccess} label="Water Access" color="#06B6D4" />
-                <ScoreGauge score={liveScores['Health'] || data.swotAnalysis.scores.health} label="Health" color="#EF4444" />
-                <ScoreGauge score={liveScores['Financial Inclusion'] || data.swotAnalysis.scores.financialInclusion} label="Financial" color="#F59E0B" />
-                <ScoreGauge score={liveScores['Education'] || data.swotAnalysis.scores.education} label="Education" color="#8B5CF6" />
-              </div>
+            <div className="card" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
+              <h2 style={{ fontSize: '2rem', color: 'var(--text-primary)', marginBottom: 'var(--space-md)' }}>
+                <Landmark size={28} className="icon" style={{ verticalAlign: 'middle', marginRight: '10px', color: 'var(--primary-light)' }} />
+                Living Traditions
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '1.05rem', marginBottom: 'var(--space-md)' }}>
+                Our village is proudly anchored by the vibrant Lambadi (Banjara) community. Deeply rooted in ancestral traditions, we preserve our unique cultural identity through colorful traditional dresses, rhythmic folk dances, and sacred festivals.
+              </p>
+              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '1.05rem', marginBottom: 'var(--space-lg)' }}>
+                Every year, the entire village comes alive during the grand <strong>Teez Festival</strong> in the Ashada month, where we seek blessings from Shivalal Maharaj with music, mud idols, and communal harmony.
+              </p>
+              <button className="btn btn-primary" onClick={() => navigate('/about')}>
+                Read Our Full Story
+              </button>
             </div>
           </div>
         </div>
 
-        {/* ═══ VULNERABILITY OVERVIEW ═══ */}
-        <div className="section">
-          <h2 className="section-title">
-            <Shield size={22} className="icon" />
-            Household Vulnerability Assessment
-          </h2>
-
-          <div className="grid-2">
-            <div className="card">
-              <div className="chart-card-title">Risk Distribution</div>
-              <div className="vuln-chart-wrapper">
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={vulnData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {vulnData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="vuln-legend">
-                  {vulnData.map((d, i) => (
-                    <div key={i} className="vuln-legend-item">
-                      <span className="vuln-dot" style={{ background: d.color }} />
-                      <span>{d.name}</span>
-                      <span className="vuln-count">{d.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <div className="chart-card-title">
-                <AlertTriangle size={18} />
-                Key Alerts
-              </div>
-              <div className="alerts-list">
-                <div className="alert-item danger">
-                  <span className="alert-pct">55.9%</span>
-                  <span>Adult illiteracy — far above national average</span>
-                </div>
-                <div className="alert-item danger">
-                  <span className="alert-pct">59.2%</span>
-                  <span>Households without proper drainage</span>
-                </div>
-                <div className="alert-item warning">
-                  <span className="alert-pct">32.4%</span>
-                  <span>Individuals without bank accounts</span>
-                </div>
-                <div className="alert-item warning">
-                  <span className="alert-pct">59.2%</span>
-                  <span>Below Poverty Line (BPL) households</span>
-                </div>
-                <div className="alert-item info">
-                  <span className="alert-pct">0%</span>
-                  <span>Solar panel adoption — zero across village</span>
-                </div>
-                <div className="alert-item info">
-                  <span className="alert-pct">21.4%</span>
-                  <span>Population currently under medical treatment</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══ SWOT HIGHLIGHTS ═══ */}
+        {/* ═══ VILLAGE AT A GLANCE ═══ */}
         <div className="section">
           <h2 className="section-title">
             <Sparkles size={22} className="icon" />
-            SWOT Highlights
+            Village at a Glance
           </h2>
-          <div className="grid-2">
-            <div className="card swot-card strength">
-              <h4>💪 Strengths</h4>
-              <ul>
-                {data.swotAnalysis.strengths.map((s, i) => <li key={i}>{s}</li>)}
-              </ul>
-            </div>
-            <div className="card swot-card weakness">
-              <h4>⚠️ Weaknesses</h4>
-              <ul>
-                {data.swotAnalysis.weaknesses.map((w, i) => <li key={i}>{w}</li>)}
-              </ul>
-            </div>
-            <div className="card swot-card opportunity">
-              <h4>🚀 Opportunities</h4>
-              <ul>
-                {data.swotAnalysis.opportunities.map((o, i) => <li key={i}>{o}</li>)}
-              </ul>
-            </div>
-            <div className="card swot-card threat">
-              <h4>🔴 Threats</h4>
-              <ul>
-                {data.swotAnalysis.threats.map((t, i) => <li key={i}>{t}</li>)}
-              </ul>
-            </div>
+          <div className="grid-4">
+            <StatCard icon={HomeIcon} label="Households" value={data.overview.totalHouseholds} desc="Close-knit families" color="teal" delay={0} />
+            <StatCard icon={Users} label="Population" value={data.overview.totalPopulation} desc={`${data.demographics.genderDistribution.Male} Male, ${data.demographics.genderDistribution.Female} Female`} color="indigo" delay={100} />
+            <StatCard icon={GraduationCap} label="Literacy" value={`${data.education.adultLiteracyRate}%`} desc="Adult literacy rate" color="amber" delay={200} />
+            <StatCard icon={Wheat} label="Farming Roots" value="48%" desc="Families dependent on agriculture" color="green" delay={300} />
           </div>
         </div>
 
@@ -465,7 +261,7 @@ export default function Home() {
           <div className="section">
             <h2 className="section-title">
               <Image size={22} className="icon" />
-              Village Gallery
+              Glimpses of the Village
             </h2>
             <div style={{
               display: 'grid',
@@ -515,48 +311,33 @@ export default function Home() {
           </div>
         )}
 
-        {/* ═══ RATE VILLAGE ═══ */}
+        {/* ═══ RATE VILLAGE / GUESTBOOK ═══ */}
         <div className="section">
           <h2 className="section-title">
-            <Star size={22} className="icon" />
-            Rate our Village
+            <MessageSquare size={22} className="icon" />
+            Visitor Guestbook
           </h2>
 
           <div style={{ gap: 'var(--space-xl)', maxWidth: '600px', margin: '0 auto' }}>
-
-            {/* ── Rating Form ── */}
             <div className="card" style={{ border: '1px solid var(--primary)' }}>
               <h4 style={{ color: 'var(--primary-light)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Star size={18} /> Rate the Village
+                <Star size={18} /> Sign Our Guestbook
               </h4>
               <p className="text-xs text-muted" style={{ marginBottom: '16px' }}>
-                Share your experience as a viewer or visitor. Your feedback is valuable.
+                Whether you are a local resident, a passing tourist, or a visiting researcher, we would love to hear your thoughts on our village!
               </p>
 
               {ratingSubmitted ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', background: 'rgba(34,197,94,0.1)', borderRadius: '8px', color: 'var(--success)' }}>
                   <CheckCircle size={22} />
                   <div>
-                    <strong>Rating submitted successfully!</strong>
-                    <p className="text-xs" style={{ marginTop: '2px', opacity: 0.8 }}>Thank you for your feedback.</p>
+                    <strong>Message submitted successfully!</strong>
+                    <p className="text-xs" style={{ marginTop: '2px', opacity: 0.8 }}>Thank you for signing our guestbook.</p>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleRatingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <select
-                      name="rating"
-                      value={ratingForm.rating}
-                      onChange={handleRatingChange}
-                      required
-                      style={{ fontSize: '0.85rem' }}
-                    >
-                      <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
-                      <option value="4">⭐⭐⭐⭐ (4/5)</option>
-                      <option value="3">⭐⭐⭐ (3/5)</option>
-                      <option value="2">⭐⭐ (2/5)</option>
-                      <option value="1">⭐ (1/5)</option>
-                    </select>
                     <select
                       name="reviewer_type"
                       value={ratingForm.reviewer_type}
@@ -564,10 +345,24 @@ export default function Home() {
                       required
                       style={{ fontSize: '0.85rem' }}
                     >
-                      <option value="visitor">Visitor</option>
-                      <option value="resident">Resident</option>
+                      <option value="visitor">Tourist / Visitor</option>
+                      <option value="resident">Local Resident</option>
                       <option value="official">Govt Official</option>
                       <option value="ngo">NGO Member</option>
+                      <option value="researcher">Researcher / Student</option>
+                    </select>
+                    <select
+                      name="rating"
+                      value={ratingForm.rating}
+                      onChange={handleRatingChange}
+                      required
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      <option value="5">⭐⭐⭐⭐⭐ (Excellent)</option>
+                      <option value="4">⭐⭐⭐⭐ (Good)</option>
+                      <option value="3">⭐⭐⭐ (Average)</option>
+                      <option value="2">⭐⭐ (Fair)</option>
+                      <option value="1">⭐ (Poor)</option>
                     </select>
                   </div>
                   <input
@@ -582,35 +377,21 @@ export default function Home() {
                     value={ratingForm.comment}
                     onChange={handleRatingChange}
                     rows={3}
-                    placeholder="Leave a comment about the village..."
+                    placeholder="Leave a comment about your experience..."
                     style={{ fontSize: '0.85rem', resize: 'vertical' }}
                   />
                   {ratingError && <p style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{ratingError}</p>}
                   <button type="submit" className="btn btn-primary" disabled={ratingSubmitting}
                     style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
                     <Send size={14} />
-                    {ratingSubmitting ? 'Submitting...' : 'Submit Rating'}
+                    {ratingSubmitting ? 'Submitting...' : 'Sign Guestbook'}
                   </button>
                 </form>
               )}
             </div>
-
-
           </div>
         </div>
 
-        {/* ═══ EXECUTIVE SUMMARY ═══ */}
-        <div className="section">
-          <div className="card executive-summary">
-            <h3><Sparkles size={20} /> Executive Summary</h3>
-            <p>{data.swotAnalysis.executiveSummary}</p>
-            <div className="exec-tags">
-              <span className="badge primary">98 Households Surveyed</span>
-              <span className="badge info">UBA Program</span>
-              <span className="badge warning">SVR Rating System</span>
-            </div>
-          </div>
-        </div>
       </section>
     </div>
   );

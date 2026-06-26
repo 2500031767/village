@@ -27,10 +27,10 @@ export default function Agriculture() {
       {/* Image Gallery */}
       <div className="grid-2" style={{ marginBottom: 'var(--space-2xl)' }}>
         <div className="card" style={{ padding: 0, overflow: 'hidden', height: '280px', borderRadius: 'var(--radius-lg)' }}>
-          <img src="/images/paddy_field.png" alt="Paddy Field" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src="/images/agriculture_1.webp" alt="Paddy Field" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <div className="card" style={{ padding: 0, overflow: 'hidden', height: '280px', borderRadius: 'var(--radius-lg)' }}>
-          <img src="/images/cotton_field.png" alt="Cotton Field" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src="/images/agriculture_2.webp" alt="Cotton Field" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       </div>
 

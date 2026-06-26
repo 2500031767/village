@@ -20,8 +20,8 @@ export default function Infrastructure() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1 className="text-gradient">Infrastructure Dashboard</h1>
-        <p>Housing, utilities, water, drainage, and mobility data</p>
+        <h1 className="text-gradient">Village Infrastructure & Facilities</h1>
+        <p>An overview of housing, utilities, water resources, and public amenities</p>
       </div>
 
       <div className="grid-5" style={{ marginBottom: 'var(--space-2xl)' }}>
@@ -58,6 +58,22 @@ export default function Infrastructure() {
           <div className="stat-content">
             <div className="stat-label">Own House</div>
             <div className="stat-value">91%</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Infrastructure Visuals */}
+      <div className="section">
+        <h2 className="section-title"><Building2 size={22} className="icon" /> Village Infrastructure Visuals</h2>
+        <div className="grid-3" style={{ gap: 'var(--space-md)' }}>
+          <div className="card" style={{ padding: 0, overflow: 'hidden', height: '250px', borderRadius: 'var(--radius-lg)' }}>
+            <img src="/images/small_hut.webp" alt="Village Housing" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div className="card" style={{ padding: 0, overflow: 'hidden', height: '250px', borderRadius: 'var(--radius-lg)' }}>
+            <img src="/images/water_tanker.webp" alt="Water Supply" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div className="card" style={{ padding: 0, overflow: 'hidden', height: '250px', borderRadius: 'var(--radius-lg)' }}>
+            <img src="/images/road_garbage.webp" alt="Roads and Sanitation" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </div>
       </div>

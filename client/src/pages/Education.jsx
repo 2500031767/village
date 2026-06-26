@@ -42,6 +42,19 @@ export default function Education() {
         </div>
       </div>
 
+      {/* School & Classrooms Visuals */}
+      <div className="section">
+        <h2 className="section-title"><School size={22} className="icon" /> Village School & Classrooms</h2>
+        <div className="grid-2">
+          <div className="card" style={{ padding: 0, overflow: 'hidden', height: '300px', borderRadius: 'var(--radius-lg)' }}>
+            <img src="/images/school_1.webp" alt="Village School Building" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div className="card" style={{ padding: 0, overflow: 'hidden', height: '300px', borderRadius: 'var(--radius-lg)' }}>
+            <img src="/images/classroom_1.webp" alt="Classroom Session with Teacher" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+        </div>
+      </div>
+
       <div className="section">
         <h2 className="section-title"><BookOpen size={22} className="icon" />Education Levels</h2>
         <div className="grid-2">

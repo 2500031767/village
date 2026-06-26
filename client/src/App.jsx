@@ -29,12 +29,14 @@ import './index.css';
 
 
 import { useState } from 'react';
+import ScrollToTop from './components/layout/ScrollToTop';
 
 function App() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="app-layout">
         <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
         <main className={`main-content ${collapsed ? 'collapsed' : ''}`}>

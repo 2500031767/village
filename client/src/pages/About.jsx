@@ -1,4 +1,4 @@
-import { MapPin, Landmark, TreePine, CloudRain, Mountain, Users, Sun } from 'lucide-react';
+import { MapPin, Landmark, TreePine, CloudRain, Mountain, Users, Sun, Network, Shield, PartyPopper, UserCheck, Building, Sprout, BookOpen, Heart, Info } from 'lucide-react';
 import villageData from '../data/villageData';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -14,115 +14,88 @@ export default function About() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1 className="text-gradient">About Seetharampuram Thanda</h1>
-        <p>Discover the history, geography, and vibrant community of our village</p>
+        <h1 className="text-gradient">Seetharampuram Thanda Village Biodata</h1>
+        <p>A comprehensive profile covering the history, culture, administration, and present landscape of our community.</p>
       </div>
 
       {/* Hero Image */}
       <div className="card" style={{ padding: 0, overflow: 'hidden', height: '400px', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-2xl)' }}>
-        <img src="/images/village_drone_view.png" alt="Seetharampuram Thanda Drone View" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src="/images/sunset_1.webp" alt="Seetharampuram Thanda Village View" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
 
-      {/* History */}
+      {/* Quick Biodata Facts */}
       <div className="section">
-        <h2 className="section-title"><Landmark size={22} className="icon" /> Village History & Culture</h2>
-        <div className="card" style={{ marginBottom: 'var(--space-lg)' }}>
-          <h4 style={{ marginBottom: 'var(--space-md)', color: 'var(--primary-light)' }}>Origin & Tribal Heritage</h4>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
-            Seetharampuram Thanda is a vibrant tribal village community located in the picturesque landscapes of the Nellore district, Andhra Pradesh, under the Mylukuru Mandal. The village is predominantly inhabited by Scheduled Tribe (ST) communities, with the ST population comprising an overwhelming <strong style={{ color: 'var(--primary-light)' }}>84.6%</strong> of total residents. The "Thanda" designation indicates a traditional tribal hamlet, reflecting the rich Lambadi and Banjara cultural heritage of the community.
-          </p>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', marginTop: 'var(--space-md)' }}>
-            For generations, the residents of Seetharampuram Thanda have preserved their unique customs, colorful traditional attire, and distinct dialects. Festivals such as <em>Teej</em> and <em>Seethla</em> are celebrated with great fervor, bringing the entire community together for traditional dances, songs, and feasts. These cultural practices serve not only as a link to their ancestors but also as a unifying force for the modern village.
-          </p>
-          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', marginTop: 'var(--space-md)' }}>
-            The village has a strong agricultural foundation, with <strong style={{ color: 'var(--primary-light)' }}>48%</strong> of households depending on farming. Key crops include Cotton, Chilli, Maize, and Paddy, supported by the fertile soils of the region. The community also maintains a diverse livestock base including goats (92), buffaloes (73), and sheep (40), reflecting the traditional pastoral roots of the Thanda community.
-          </p>
-        </div>
-      </div>
-
-      {/* Geography */}
-      <div className="section">
-        <h2 className="section-title"><Mountain size={22} className="icon" /> Geography & Environment</h2>
+        <h2 className="section-title"><Info size={22} className="icon" /> Quick Profile</h2>
         <div className="grid-4">
           <div className="stat-card">
             <div className="stat-icon teal"><MapPin size={24} /></div>
             <div className="stat-content">
               <div className="stat-label">Location</div>
               <div className="stat-value" style={{ fontSize: '1.1rem' }}>Mylavaram</div>
-              <div className="stat-desc">Mandal, NTR District</div>
+              <div className="stat-desc">NTR District, AP</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon blue"><TreePine size={24} /></div>
+            <div className="stat-icon blue"><Users size={24} /></div>
             <div className="stat-content">
-              <div className="stat-label">State</div>
-              <div className="stat-value" style={{ fontSize: '1.1rem' }}>Andhra Pradesh</div>
-              <div className="stat-desc">Southern India</div>
+              <div className="stat-label">Population</div>
+              <div className="stat-value" style={{ fontSize: '1.1rem' }}>{data.overview.totalPopulation}</div>
+              <div className="stat-desc">Across {data.overview.totalHouseholds} households</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon amber"><CloudRain size={24} /></div>
+            <div className="stat-icon amber"><Landmark size={24} /></div>
             <div className="stat-content">
-              <div className="stat-label">Climate</div>
-              <div className="stat-value" style={{ fontSize: '1.1rem' }}>Tropical</div>
-              <div className="stat-desc">Hot and humid summers</div>
+              <div className="stat-label">Established</div>
+              <div className="stat-value" style={{ fontSize: '1.1rem' }}>~80 Years Ago</div>
+              <div className="stat-desc">Lambadi Community</div>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon green"><Sun size={24} /></div>
+            <div className="stat-icon green"><Mountain size={24} /></div>
             <div className="stat-content">
-              <div className="stat-label">Terrain</div>
-              <div className="stat-value" style={{ fontSize: '1.1rem' }}>Plains</div>
-              <div className="stat-desc">Fertile agricultural lands</div>
+              <div className="stat-label">Distance</div>
+              <div className="stat-value" style={{ fontSize: '1.1rem' }}>50 km</div>
+              <div className="stat-desc">From Vijayawada</div>
             </div>
           </div>
         </div>
-        <div className="card mt-lg">
-           <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
-            The geography of Seetharampuram Thanda is characterized by expansive plains and rich soils, ideal for cultivating cash crops like cotton and chillies. The village experiences a typical tropical climate, relying heavily on the seasonal monsoons and borewells for irrigation. Surrounded by natural greenery and open fields, the village enjoys a serene environment far removed from urban pollution.
+      </div>
+
+      {/* History & Religion */}
+      <div className="section">
+        <h2 className="section-title"><Landmark size={22} className="icon" /> History & Religion</h2>
+        <div className="card">
+          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+            Established around <strong>80 years ago</strong>, Seetharampuram Thanda is a vibrant tribal hamlet located in Mylavaram Mandal, deeply rooted in the <strong>Lambadi (Banjara)</strong> cultural heritage. The overwhelming majority of the population (approximately 84.6%) belongs to the Scheduled Tribe (ST) community.
+          </p>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', marginTop: 'var(--space-md)' }}>
+            The village is a harmonious blend of faiths, home to people from both <strong>Hindu</strong> and <strong>Christian</strong> religions, with Hinduism being the predominant faith. The villagers are deeply spiritual, revering their ancestors and local deities that have protected the Thanda since its inception.
           </p>
         </div>
       </div>
 
-      {/* Community */}
+      {/* Demographics & Community */}
       <div className="section">
-        <h2 className="section-title"><Users size={22} className="icon" /> Community Profile</h2>
+        <h2 className="section-title"><Users size={22} className="icon" /> Demographics & Community Profile</h2>
         <div className="grid-2">
-          
           <div className="flex-col gap-lg">
             <div className="card">
-              <h4 style={{ marginBottom: 'var(--space-md)' }}>Key Demographics</h4>
+              <h4 style={{ marginBottom: 'var(--space-md)', color: 'var(--primary-light)' }}>Key Demographics</h4>
               <table className="data-table">
                 <tbody>
                   <tr><td>Average Age</td><td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{data.demographics.averageAge} years</td></tr>
-                  <tr><td>Median Age</td><td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{data.demographics.medianAge} years</td></tr>
                   <tr><td>Gender Ratio</td><td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{data.demographics.genderRatio}</td></tr>
-                  <tr><td>Dependency Ratio</td><td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{data.demographics.dependencyRatio}</td></tr>
                   <tr><td>Working Age (19-60)</td><td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{data.demographics.workingAgePopulation}</td></tr>
                   <tr><td>Children (0-14)</td><td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{data.demographics.childPopulation}</td></tr>
-                  <tr><td>Seniors (60+)</td><td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{data.demographics.seniorPopulation}</td></tr>
+                  <tr><td>Average Family Size</td><td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{data.overview.averageFamilySize} members</td></tr>
                 </tbody>
               </table>
             </div>
 
             <div className="card">
-              <h4 style={{ marginBottom: 'var(--space-md)' }}>Social Categories</h4>
-              {Object.entries(data.demographics.casteDistribution).map(([cat, count]) => (
-                <div className="progress-bar-wrapper" key={cat}>
-                  <div className="progress-bar-header">
-                    <span className="progress-bar-label">{cat}</span>
-                    <span className="progress-bar-value">{count} ({(count/data.overview.totalPopulation*100).toFixed(1)}%)</span>
-                  </div>
-                  <div className="progress-bar-track">
-                    <div className="progress-bar-fill" style={{ width: `${(count/data.overview.totalPopulation*100)}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="card">
-              <h4 style={{ marginBottom: 'var(--space-md)' }}>Age Distribution</h4>
-              <div style={{ height: '250px', width: '100%' }}>
+              <h4 style={{ marginBottom: 'var(--space-md)', color: 'var(--primary-light)' }}>Age Distribution</h4>
+              <div style={{ height: '220px', width: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={ageChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
@@ -141,9 +114,135 @@ export default function About() {
           </div>
 
           <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
-             <img src="/images/village_community.png" alt="Village Community Gathering" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+             <img src="/images/traditional_dress.webp" alt="Lambadi Traditional Dress" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
+        </div>
+      </div>
 
+      {/* Festivals & Cultural Practices */}
+      <div className="section">
+        <h2 className="section-title"><PartyPopper size={22} className="icon" /> Culture, Festivals & Religious Practices</h2>
+        <div className="grid-2">
+          <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
+             <img src="/images/dance_1.webp" alt="Traditional Dance and Culture" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div className="card">
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+              The villagers actively celebrate common Hindu festivals such as Diwali, Sankranti, Ugadi, and other regional events. However, their unique tribal identity shines through their distinct cultural practices.
+            </p>
+            <h4 style={{ margin: 'var(--space-md) 0', color: 'var(--primary-light)' }}>The TEEZ Festival & Deity Worship</h4>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+              The principal deity worshipped by the community is <strong>Shivalal Maharaj</strong>, regarded as their spiritual guide and ultimate protector.
+            </p>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', marginTop: 'var(--space-sm)' }}>
+              The most significant cultural event is <strong>Teez</strong>, celebrated once every year during the Telugu month of Ashada (Aashada Masam). The key practices include:
+            </p>
+            <ul style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', paddingLeft: '1.5rem', marginTop: '8px' }}>
+              <li>Preparation of traditional foods like <strong>Jonna Rottelu (sorghum flatbread)</strong> and <strong>Aakura Pappu (leafy vegetable dal)</strong> as <em>prasadam</em>.</li>
+              <li>Villagers prepare <strong>mud idols (clay statues)</strong>, which are later immersed in a nearby river or water body.</li>
+              <li>A grand festival procession begins directly from the house of the village <strong>Pedhanaayakudu</strong>.</li>
+              <li>A traditional <strong>Bali (ritual offering/sacrifice)</strong> is performed in front of the Pedhanaayakudu's house to seek blessings.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Agriculture & Livelihood */}
+      <div className="section">
+        <h2 className="section-title"><Sprout size={22} className="icon" /> Agriculture & Livelihood</h2>
+        <div className="card">
+          <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+            Farming forms the backbone of the village economy, with nearly <strong>48% of households depending directly on agriculture</strong>. The village primarily relies on <strong>Bore Wells</strong> for irrigation, although a significant portion of land remains unirrigated, making seasonal rains critical.
+          </p>
+          <div className="grid-3" style={{ marginTop: 'var(--space-lg)' }}>
+            <div style={{ padding: 'var(--space-md)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>
+              <h4 style={{ marginBottom: '8px', color: 'var(--primary-light)' }}>Primary Crops</h4>
+              <ul style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', paddingLeft: '1rem' }}>
+                <li><strong>Cotton</strong> (Cash Crop)</li>
+                <li><strong>Chilli</strong> (Cash Crop)</li>
+                <li><strong>Maize</strong> (Food Crop)</li>
+                <li><strong>Paddy</strong> (Food Crop)</li>
+              </ul>
+            </div>
+            <div style={{ padding: 'var(--space-md)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>
+              <h4 style={{ marginBottom: '8px', color: 'var(--primary-light)' }}>Livestock Dependency</h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Pastoral roots remain strong, with nearly 38% of households maintaining livestock. The village houses <strong>92 goats</strong>, <strong>73 buffaloes</strong>, and <strong>40 sheep</strong>.
+              </p>
+            </div>
+            <div style={{ padding: 'var(--space-md)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)' }}>
+              <h4 style={{ marginBottom: '8px', color: 'var(--primary-light)' }}>Other Occupations</h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Apart from farming, many residents work as daily wage laborers. A growing number of youth are pursuing higher education and venturing into IT/private sector employment in nearby cities.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Local Justice System & Governance */}
+      <div className="section">
+        <h2 className="section-title"><Shield size={22} className="icon" /> Local Justice System & Governance</h2>
+        <div className="grid-2">
+          <div className="card">
+            <h4 style={{ marginBottom: 'var(--space-md)', color: 'var(--primary-light)' }}>Traditional Community Leadership</h4>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+              Seetharampuram Thanda operates heavily on its traditional community-based governance rather than formal legal processes. The village has <strong>no permanent government officials stationed</strong> within it. 
+            </p>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', marginTop: 'var(--space-sm)' }}>
+              Leadership is divided into two distinct roles:
+            </p>
+            <ul style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', paddingLeft: '1.5rem', marginBottom: 'var(--space-md)' }}>
+              <li><strong>Justice Pedhanaayakudu</strong>: Resolves disputes and maintains peace.</li>
+              <li><strong>Treasury Pedhanaayakudu</strong>: Manages community funds.</li>
+            </ul>
+
+            <h4 style={{ marginBottom: 'var(--space-md)', color: 'var(--primary-light)' }}>Selection Process</h4>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+              The Pedhanaayakudu is <strong>not elected through voting</strong>. Community elders identify a suitable candidate based on reputation and leadership. A <strong>red towel</strong> is ceremonially placed on their head, symbolizing their appointment. This emphasizes pure community consensus.
+            </p>
+          </div>
+          <div className="card">
+             <h4 style={{ marginBottom: 'var(--space-md)', color: 'var(--primary-light)' }}>The Justice Process</h4>
+             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+              This system is widely accepted due to its speed and accessibility. When a dispute arises:
+            </p>
+            <ol style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', paddingLeft: '1.5rem', marginTop: '8px' }}>
+              <li>A community meeting is organized.</li>
+              <li>Both parties present their arguments openly.</li>
+              <li>The leaders and elders carefully listen and make an immediate decision.</li>
+            </ol>
+            <div style={{ marginTop: 'var(--space-md)', padding: 'var(--space-md)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid #e74c3c' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>Guilty Verdict & Fines:</strong>
+              <ul style={{ marginTop: '8px', paddingLeft: '1.5rem', color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+                <li>A monetary penalty is imposed immediately.</li>
+                <li>Approximately <strong>half of the fine</strong> goes to the affected party as compensation.</li>
+                <li>The remaining amount is distributed among the jury/elders, often used for communal gatherings or refreshments.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Infrastructure & Present Status */}
+      <div className="section">
+        <h2 className="section-title"><Building size={22} className="icon" /> Infrastructure & Present Status</h2>
+        <div className="grid-2">
+          <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
+             <img src="/images/small_hut.webp" alt="Village Infrastructure" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div className="card">
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+              The village has made progress with basic infrastructure, boasting a <strong>98% electricity connectivity</strong> and substantial adoption of clean cooking fuel (LPG). However, development is still ongoing with several major hurdles.
+            </p>
+            <h4 style={{ margin: 'var(--space-md) 0', color: 'var(--primary-light)' }}>Major Challenges</h4>
+            <ul style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.95rem', paddingLeft: '1.5rem' }}>
+              <li><strong>Connectivity:</strong> Lack of reliable 5G mobile network coverage and generally limited internet speeds.</li>
+              <li><strong>Roads:</strong> Most internal roads are either mud or basic cement, with only a few properly developed arteries.</li>
+              <li><strong>Sanitation:</strong> Almost 60% of households lack proper drainage facilities, which remains the highest reported problem among residents.</li>
+              <li><strong>Water:</strong> While government pipe water exists, inadequate water supply remains a significant grievance, forcing many to buy mineral water.</li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -152,7 +251,6 @@ export default function About() {
         <h2 className="section-title"><MapPin size={22} className="icon" /> Location Map</h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)' }} className="map-grid">
-
           {/* Satellite map pinned to village school landmark */}
           <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
             <div style={{ padding: '10px 16px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>

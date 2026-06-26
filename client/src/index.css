@@ -98,6 +98,17 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hide Google Translate Bar */
+.goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon {
+  display: none !important;
+}
+body {
+  top: 0px !important;
+}
+#goog-gt-tt {
+  display: none !important;
+}
+
 body {
   font-family: var(--font-primary);
   background: var(--bg-primary);
@@ -204,7 +215,6 @@ h4 { font-size: 1.125rem; }
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
-  padding-top: var(--navbar-height);
   min-height: 100vh;
   transition: margin-left var(--transition-base);
 }

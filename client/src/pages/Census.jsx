@@ -168,7 +168,7 @@ export default function Census() {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1 className="text-gradient">Household Census Dashboard</h1>
+        <h1 className="text-gradient">Village Demographics & Census</h1>
         <p>
           {overview['Total Households'] || 98} surveyed households &nbsp;·&nbsp;
           {overview['Total Population'] || 318} residents &nbsp;·&nbsp;

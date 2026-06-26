@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Gallery with Numbers</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .card { background: #2a2a2a; padding: 10px; border-radius: 8px; text-align: center; position: relative; }
+    .number-badge {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      background: #e74c3c;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border: 3px solid #1a1a1a;
+      z-index: 10;
+    }
+    img { max-width: 100%; height: auto; border-radius: 4px; max-height: 200px; object-fit: cover; }
+    .filename { margin-top: 10px; font-size: 0.8em; word-break: break-all; color: #aaa; }
+  </style>
+</head>
+<body>
+  <h1>Numbered Image Gallery</h1>
+  <p>Here is the gallery with numbers! Please reply with the numbers and their categories (e.g., "1 - Dance", "5 - Farming", etc.)</p>
+  <div class="gallery">
+    <div class="card"><div class="number-badge">1</div><img src="/actual_images/IMG_20260626_095130_201.webp" loading="lazy"><div class="filename">IMG_20260626_095130_201.webp</div></div>
+    <div class="card"><div class="number-badge">2</div><img src="/actual_images/IMG_20260626_095130_752.webp" loading="lazy"><div class="filename">IMG_20260626_095130_752.webp</div></div>
+    <div class="card"><div class="number-badge">3</div><img src="/actual_images/IMG_20260626_095130_796.webp" loading="lazy"><div class="filename">IMG_20260626_095130_796.webp</div></div>
+    <div class="card"><div class="number-badge">4</div><img src="/actual_images/IMG_20260626_095130_978.webp" loading="lazy"><div class="filename">IMG_20260626_095130_978.webp</div></div>
+    <div class="card"><div class="number-badge">5</div><img src="/actual_images/IMG_20260626_095131_890.webp" loading="lazy"><div class="filename">IMG_20260626_095131_890.webp</div></div>
+    <div class="card"><div class="number-badge">6</div><img src="/actual_images/IMG_20260626_095132_049.webp" loading="lazy"><div class="filename">IMG_20260626_095132_049.webp</div></div>
+    <div class="card"><div class="number-badge">7</div><img src="/actual_images/photo_10_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_10_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">8</div><img src="/actual_images/photo_11_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_11_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">9</div><img src="/actual_images/photo_12_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_12_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">10</div><img src="/actual_images/photo_13_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_13_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">11</div><img src="/actual_images/photo_14_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_14_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">12</div><img src="/actual_images/photo_15_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_15_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">13</div><img src="/actual_images/photo_16_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_16_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">14</div><img src="/actual_images/photo_17_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_17_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">15</div><img src="/actual_images/photo_18_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_18_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">16</div><img src="/actual_images/photo_19_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_19_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">17</div><img src="/actual_images/photo_1_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_1_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">18</div><img src="/actual_images/photo_1_2026-06-26_10-48-20.webp" loading="lazy"><div class="filename">photo_1_2026-06-26_10-48-20.webp</div></div>
+    <div class="card"><div class="number-badge">19</div><img src="/actual_images/photo_20_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_20_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">20</div><img src="/actual_images/photo_21_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_21_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">21</div><img src="/actual_images/photo_22_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_22_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">22</div><img src="/actual_images/photo_23_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_23_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">23</div><img src="/actual_images/photo_24_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_24_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">24</div><img src="/actual_images/photo_2_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_2_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">25</div><img src="/actual_images/photo_2_2026-06-26_10-48-20.webp" loading="lazy"><div class="filename">photo_2_2026-06-26_10-48-20.webp</div></div>
+    <div class="card"><div class="number-badge">26</div><img src="/actual_images/photo_3_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_3_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">27</div><img src="/actual_images/photo_3_2026-06-26_10-48-20.webp" loading="lazy"><div class="filename">photo_3_2026-06-26_10-48-20.webp</div></div>
+    <div class="card"><div class="number-badge">28</div><img src="/actual_images/photo_4_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_4_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">29</div><img src="/actual_images/photo_4_2026-06-26_10-48-20.webp" loading="lazy"><div class="filename">photo_4_2026-06-26_10-48-20.webp</div></div>
+    <div class="card"><div class="number-badge">30</div><img src="/actual_images/photo_5_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_5_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">31</div><img src="/actual_images/photo_5_2026-06-26_10-48-20.webp" loading="lazy"><div class="filename">photo_5_2026-06-26_10-48-20.webp</div></div>
+    <div class="card"><div class="number-badge">32</div><img src="/actual_images/photo_6_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_6_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">33</div><img src="/actual_images/photo_6_2026-06-26_10-48-20.webp" loading="lazy"><div class="filename">photo_6_2026-06-26_10-48-20.webp</div></div>
+    <div class="card"><div class="number-badge">34</div><img src="/actual_images/photo_7_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_7_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">35</div><img src="/actual_images/photo_7_2026-06-26_10-48-20.webp" loading="lazy"><div class="filename">photo_7_2026-06-26_10-48-20.webp</div></div>
+    <div class="card"><div class="number-badge">36</div><img src="/actual_images/photo_8_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_8_2026-06-26_10-07-36.webp</div></div>
+    <div class="card"><div class="number-badge">37</div><img src="/actual_images/photo_9_2026-06-26_10-07-36.webp" loading="lazy"><div class="filename">photo_9_2026-06-26_10-07-36.webp</div></div>
+  </div>
+</body>
+</html>
