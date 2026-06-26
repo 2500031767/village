@@ -121,3 +121,4 @@ dist-ssr
 *.sw?
 
 rename.js
+database/
